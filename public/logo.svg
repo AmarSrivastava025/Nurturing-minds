@@ -1,0 +1,220 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
+  <defs>
+    <!-- Outer Purple Ring Gradient -->
+    <linearGradient id="outerRingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#73008E" />
+      <stop offset="50%" stop-color="#5E0075" />
+      <stop offset="100%" stop-color="#520066" />
+    </linearGradient>
+
+    <!-- Inner Medallion Background Radial Gradient -->
+    <radialGradient id="medallionGrad" cx="50%" cy="45%" r="50%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="55%" stop-color="#FAF5FC" />
+      <stop offset="85%" stop-color="#E2CFE9" />
+      <stop offset="100%" stop-color="#CBB1D6" />
+    </radialGradient>
+
+    <!-- Subtle Medallion Rim Shadow -->
+    <radialGradient id="rimShadow" cx="50%" cy="50%" r="50%">
+      <stop offset="88%" stop-color="#7B3A8B" stop-opacity="0" />
+      <stop offset="98%" stop-color="#6A227D" stop-opacity="0.28" />
+      <stop offset="100%" stop-color="#5A156D" stop-opacity="0.45" />
+    </radialGradient>
+
+    <!-- Left Heart Lobe Gradient (Deep Royal Plum) -->
+    <radialGradient id="heartLobeGrad" cx="38%" cy="32%" r="65%">
+      <stop offset="0%" stop-color="#8F14A8" />
+      <stop offset="40%" stop-color="#6B0281" />
+      <stop offset="85%" stop-color="#4E005E" />
+      <stop offset="100%" stop-color="#3B0047" />
+    </radialGradient>
+
+    <!-- Right Brain Gyri Gradient (Vivid Magenta / Violet) -->
+    <linearGradient id="brainGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#B81FE8" />
+      <stop offset="50%" stop-color="#9E0CD1" />
+      <stop offset="100%" stop-color="#7D02A8" />
+    </linearGradient>
+
+    <!-- Hands Gray Gradient (Pewter / Metallic Slate) -->
+    <linearGradient id="handLeftGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#848891" />
+      <stop offset="35%" stop-color="#6B6E76" />
+      <stop offset="75%" stop-color="#4F5258" />
+      <stop offset="100%" stop-color="#3B3D42" />
+    </linearGradient>
+
+    <linearGradient id="handRightGrad" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#848891" />
+      <stop offset="35%" stop-color="#6B6E76" />
+      <stop offset="75%" stop-color="#4F5258" />
+      <stop offset="100%" stop-color="#3B3D42" />
+    </linearGradient>
+
+    <!-- 3D Orange Embossed Text Gradient -->
+    <linearGradient id="orangeTextGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FF9640" />
+      <stop offset="25%" stop-color="#FF7300" />
+      <stop offset="70%" stop-color="#E8590C" />
+      <stop offset="100%" stop-color="#B33E00" />
+    </linearGradient>
+
+    <!-- Soft Drop Shadow Filter for Hands and Central Motif -->
+    <filter id="softShadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#420050" flood-opacity="0.22" />
+    </filter>
+
+    <filter id="textEmboss" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="1" dy="2" stdDeviation="1" flood-color="#802600" flood-opacity="0.6" />
+    </filter>
+
+    <!-- Bottom Curved Text Arc Path -->
+    <!-- Arc from bottom-left to bottom-right curving along the inner medallion -->
+    <path id="nurturingMindsArc" d="M 92,305 A 176,176 0 0,0 408,305" fill="none" />
+  </defs>
+
+  <!-- 1. Outer Deep Purple Ring -->
+  <circle cx="250" cy="250" r="236" fill="none" stroke="url(#outerRingGrad)" stroke-width="16" />
+
+  <!-- 2. Clean White Gap Ring -->
+  <circle cx="250" cy="250" r="227" fill="none" stroke="#FFFFFF" stroke-width="2" />
+
+  <!-- 3. Inner Medallion Disc -->
+  <circle cx="250" cy="250" r="218" fill="url(#medallionGrad)" stroke="#B89CC4" stroke-width="1.5" />
+  <circle cx="250" cy="250" r="218" fill="url(#rimShadow)" />
+
+  <!-- 4. Central Graphic Group (Cradling Hands + Heart/Brain) -->
+  <g filter="url(#softShadow)">
+
+    <!-- A. LEFT HEART LOBE (Smooth Deep Purple Heart) -->
+    <!-- Center seam is at X=250. Extends to left ~X=165, top lobe ~Y=115, bottom point ~Y=265 -->
+    <path d="M 250,265
+             C 238,252 188,206 170,172
+             C 152,138 162,112 188,112
+             C 214,112 238,132 250,154
+             L 250,265 Z"
+          fill="url(#heartLobeGrad)" />
+
+    <!-- Left Heart Lobe 3D Specular Highlight -->
+    <path d="M 205,122
+             C 185,122 174,136 174,152
+             C 174,168 184,188 198,206
+             C 192,188 188,168 190,150
+             C 192,136 200,126 205,122 Z"
+          fill="#FFFFFF" opacity="0.22" />
+
+    <!-- B. RIGHT BRAIN HEMISPHERE (Intricate Vivid Magenta/Violet Folds) -->
+    <!-- Base silhouette of right brain half -->
+    <path d="M 250,154
+             C 256,132 278,110 306,110
+             C 334,110 348,135 348,158
+             C 348,172 340,186 332,198
+             C 342,206 345,220 338,232
+             C 330,246 312,258 290,265
+             C 272,270 258,268 250,265
+             Z"
+          fill="url(#brainGrad)" />
+
+    <!-- Brain Convolutions (Gyri) - Precise 3D overlapping lobes -->
+    <!-- Top outer gyrus fold -->
+    <path d="M 255,138
+             C 270,120 292,118 310,124
+             C 328,130 336,144 330,158
+             C 324,170 308,170 292,164
+             C 278,158 266,162 255,168"
+          fill="none" stroke="#B81FE8" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" />
+
+    <!-- Mid-upper brain fold -->
+    <path d="M 254,174
+             C 272,168 296,168 316,176
+             C 334,184 340,198 332,210
+             C 324,222 306,218 290,210
+             C 276,204 266,208 254,212"
+          fill="none" stroke="#A713D8" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" />
+
+    <!-- Central horizontal brain convolution loop -->
+    <path d="M 254,218
+             C 270,214 290,214 308,222
+             C 324,230 326,242 316,252
+             C 306,262 288,258 274,250
+             C 264,244 258,246 254,248"
+          fill="none" stroke="#940CC2" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" />
+
+    <!-- Lower cerebellum lobe fold -->
+    <path d="M 254,250
+             C 265,248 278,252 288,260
+             C 296,266 288,272 278,272
+             C 268,272 258,268 254,265"
+          fill="none" stroke="#7A02A0" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" />
+
+    <!-- Brain gyri highlights for shiny 3D relief -->
+    <path d="M 264,128 C 280,122 298,124 314,132"
+          fill="none" stroke="#E286FB" stroke-width="3.5" stroke-linecap="round" opacity="0.75" />
+    <path d="M 270,172 C 288,172 308,178 322,188"
+          fill="none" stroke="#E286FB" stroke-width="3" stroke-linecap="round" opacity="0.7" />
+    <path d="M 268,218 C 284,218 300,224 312,232"
+          fill="none" stroke="#E286FB" stroke-width="2.5" stroke-linecap="round" opacity="0.65" />
+
+    <!-- Center Division Line between Heart and Brain -->
+    <line x1="250" y1="145" x2="250" y2="265" stroke="#3D004A" stroke-width="3.5" stroke-linecap="round" />
+
+    <!-- C. TWO CUPPING CARING HANDS (Pewter / Metallic Gray) -->
+    <!-- Left Hand: Palm, Cupping Fingers, and Wrist reaching up -->
+    <path d="M 235,365
+             C 220,360 198,342 178,312
+             C 152,274 134,216 132,148
+             C 134,148 144,178 155,208
+             C 165,236 178,262 195,278
+             C 182,252 176,220 180,192
+             C 183,188 188,198 194,218
+             C 202,246 215,268 232,278
+             C 244,285 248,312 245,338
+             Z"
+          fill="url(#handLeftGrad)" stroke="#4A4C52" stroke-width="1.5" stroke-linejoin="round" />
+
+    <!-- Left Hand Thumb & Palm Crease Highlight -->
+    <path d="M 136,158
+             C 139,188 148,222 162,252
+             C 178,284 204,324 230,348"
+          fill="none" stroke="#9EA3AC" stroke-width="3.5" stroke-linecap="round" opacity="0.6" />
+
+    <!-- Right Hand: Palm, Cupping Fingers, and Wrist reaching up (Mirrored) -->
+    <path d="M 265,365
+             C 280,360 302,342 322,312
+             C 348,274 366,216 368,148
+             C 366,148 356,178 345,208
+             C 335,236 322,262 305,278
+             C 318,252 324,220 320,192
+             C 317,188 312,198 306,218
+             C 298,246 285,268 268,278
+             C 256,285 252,312 255,338
+             Z"
+          fill="url(#handRightGrad)" stroke="#4A4C52" stroke-width="1.5" stroke-linejoin="round" />
+
+    <!-- Right Hand Thumb & Palm Crease Highlight -->
+    <path d="M 364,158
+             C 361,188 352,222 338,252
+             C 322,284 296,324 270,348"
+          fill="none" stroke="#9EA3AC" stroke-width="3.5" stroke-linecap="round" opacity="0.6" />
+
+    <!-- Wrist Base Confluence Point -->
+    <path d="M 235,365 C 245,372 255,372 265,365 L 250,380 Z" fill="#3B3D42" />
+  </g>
+
+  <!-- 5. Embossed 3D Curved Text: "NURTURING MINDS" -->
+  <g filter="url(#textEmboss)">
+    <text font-family="'Poppins', 'Arial Black', sans-serif" font-weight="900" font-size="35" letter-spacing="7.5" fill="url(#orangeTextGrad)">
+      <textPath href="#nurturingMindsArc" startOffset="50%" text-anchor="middle">
+        NURTURING MINDS
+      </textPath>
+    </text>
+  </g>
+
+  <!-- Specular 3D Highlight on Top Edge of Text Letters -->
+  <text font-family="'Poppins', 'Arial Black', sans-serif" font-weight="900" font-size="35" letter-spacing="7.5" fill="none" stroke="#FFD8A8" stroke-width="0.9" opacity="0.75">
+    <textPath href="#nurturingMindsArc" startOffset="50%" text-anchor="middle">
+      NURTURING MINDS
+    </textPath>
+  </text>
+</svg>

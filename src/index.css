@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Poppins', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background-color: #FDFCFE;
+    color: #2D3748;
+  }
+}
+
+:root {
+  --brand-primary: #6D0281;
+  --brand-primary-hover: #570167;
+  --brand-secondary: #F27D26;
+  --brand-bg: #FDFCFE;
+}
+
+/* Custom scrollbars for professional polish */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #E2E8F0;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #CBD5E1;
+}

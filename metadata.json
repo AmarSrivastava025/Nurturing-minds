@@ -1,0 +1,8 @@
+{
+  "name": "Nurturing Minds Therapy Center",
+  "description": "Pediatric occupational therapy records, scheduling, progress reports, and practice management app for Dr. Sweety Bhatnagar.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

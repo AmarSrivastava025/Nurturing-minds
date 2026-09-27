@@ -1,0 +1,115 @@
+{
+  "entities": {
+    "patients": {
+      "collection": "patients",
+      "description": "Child patient clinical records, demographics, and therapy schedule",
+      "fields": {
+        "id": { "type": "string", "required": true },
+        "childName": { "type": "string", "required": true },
+        "age": { "type": "number", "required": true },
+        "bloodGroup": { "type": "string", "required": false },
+        "symptoms": { "type": "string", "required": false },
+        "chiefComplaint": { "type": "string", "required": false },
+        "motherName": { "type": "string", "required": true },
+        "motherContact": { "type": "string", "required": true },
+        "fatherName": { "type": "string", "required": true },
+        "fatherContact": { "type": "string", "required": true },
+        "parentEmail": { "type": "string", "required": false },
+        "parentLoginId": { "type": "string", "required": false },
+        "parentPassword": { "type": "string", "required": false },
+        "assignedTherapistId": { "type": "string", "required": false },
+        "sessionsPerWeek": { "type": "number", "required": true },
+        "paymentStatus": { "type": "string", "required": true },
+        "createdAt": { "type": "string", "required": true }
+      }
+    },
+    "therapists": {
+      "collection": "therapists",
+      "description": "Clinical therapist team members and credentials",
+      "fields": {
+        "id": { "type": "string", "required": true },
+        "name": { "type": "string", "required": true },
+        "email": { "type": "string", "required": true },
+        "qualification": { "type": "string", "required": true },
+        "summary": { "type": "string", "required": false },
+        "loginId": { "type": "string", "required": false },
+        "password": { "type": "string", "required": false }
+      }
+    },
+    "sessions": {
+      "collection": "sessions",
+      "description": "45-minute pediatric therapy sessions and clinical notes",
+      "fields": {
+        "id": { "type": "string", "required": true },
+        "patientId": { "type": "string", "required": true },
+        "therapistId": { "type": "string", "required": true },
+        "scheduledAt": { "type": "string", "required": true },
+        "timeSlot": { "type": "string", "required": true },
+        "status": { "type": "string", "required": true },
+        "progressNote": { "type": "string", "required": false }
+      }
+    },
+    "progressSummaries": {
+      "collection": "progressSummaries",
+      "description": "Fortnightly AI-generated and Dr. Sweety Bhatnagar approved progress reports",
+      "fields": {
+        "id": { "type": "string", "required": true },
+        "patientId": { "type": "string", "required": true },
+        "aiDraft": { "type": "string", "required": true },
+        "approved": { "type": "boolean", "required": true }
+      }
+    },
+    "invoices": {
+      "collection": "invoices",
+      "description": "Patient fee receipts and invoicing records",
+      "fields": {
+        "id": { "type": "string", "required": true },
+        "patientId": { "type": "string", "required": true },
+        "invoiceNumber": { "type": "string", "required": true },
+        "amount": { "type": "number", "required": true },
+        "issuedAt": { "type": "string", "required": true },
+        "paymentMode": { "type": "string", "required": true }
+      }
+    },
+    "expenses": {
+      "collection": "expenses",
+      "description": "Clinic operational expenses",
+      "fields": {
+        "id": { "type": "string", "required": true },
+        "date": { "type": "string", "required": true },
+        "amount": { "type": "number", "required": true },
+        "category": { "type": "string", "required": true },
+        "description": { "type": "string", "required": true }
+      }
+    },
+    "notifications": {
+      "collection": "notifications",
+      "description": "System-wide and targeted notifications",
+      "fields": {
+        "id": { "type": "string", "required": true },
+        "userId": { "type": "string", "required": true },
+        "targetRole": { "type": "string", "required": true },
+        "type": { "type": "string", "required": true },
+        "message": { "type": "string", "required": true },
+        "read": { "type": "boolean", "required": true }
+      }
+    },
+    "invites": {
+      "collection": "invites",
+      "description": "Unique registration invite codes",
+      "fields": {
+        "id": { "type": "string", "required": true },
+        "code": { "type": "string", "required": true },
+        "role": { "type": "string", "required": true },
+        "used": { "type": "boolean", "required": true }
+      }
+    },
+    "clinicSettings": {
+      "collection": "clinicSettings",
+      "description": "Doctor profile, weekly slot templates, published video, and daily configurations",
+      "fields": {
+        "id": { "type": "string", "required": true }
+      }
+    }
+  }
+}
