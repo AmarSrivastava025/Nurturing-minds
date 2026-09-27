@@ -194,3 +194,20 @@ export interface EmailLog {
   retryCount?: number;
   scheduledFor?: string;
 }
+
+export interface MessageLog {
+  id: string;
+  sessionId: string;
+  recipientPhone: string;
+  recipientName: string;
+  childName: string;
+  therapistName?: string;
+  channel: 'whatsapp' | 'sms';
+  messageType: 'reminder_24h' | 'reminder_2h' | 'therapist_swap' | 'booking_alert';
+  sentAt: string; // ISO timestamp
+  status: 'sent' | 'failed' | 'scheduled';
+  error?: string | null;
+  body: string;
+  scheduledFor?: string;
+  retryCount?: number;
+}

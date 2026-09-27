@@ -29,6 +29,7 @@ import {
   Therapist,
   UserSession,
   EmailLog,
+  MessageLog,
 } from '../types';
 import {
   calculate45MinEndTime,
@@ -63,6 +64,10 @@ import {
   subscribeToFirestore,
 } from './firestoreSync';
 import { processSessionEmailSequence } from './automation/email-confirmation-sequence';
+import {
+  processSessionMessageSequence,
+  triggerTherapistSwapWhatsAppAlert,
+} from './automation/whatsapp-sms-service';
 
 export interface StoreState {
   patients: Patient[];
@@ -80,6 +85,7 @@ export interface StoreState {
   dailySlotConfigs: Record<string, DailySlotConfig>;
   weeklySlotTemplates: DayOfWeekSlotTemplate[];
   emailLogs: EmailLog[];
+  messageLogs: MessageLog[];
   isCloudSynced: boolean;
   cloudError: string | null;
 }
@@ -147,6 +153,7 @@ function loadInitialState(): StoreState {
         dailySlotConfigs: parsed.dailySlotConfigs || {},
         weeklySlotTemplates: parsed.weeklySlotTemplates || [...DEFAULT_WEEKLY_SLOT_TEMPLATES],
         emailLogs: parsed.emailLogs || [],
+        messageLogs: parsed.messageLogs || [],
         isCloudSynced: false,
         cloudError: null,
       };
@@ -199,6 +206,7 @@ function getSeedState(): StoreState {
     dailySlotConfigs: {},
     weeklySlotTemplates: [...DEFAULT_WEEKLY_SLOT_TEMPLATES],
     emailLogs: [],
+    messageLogs: [],
     isCloudSynced: false,
     cloudError: null,
   };
@@ -1010,20 +1018,31 @@ class Store {
     }
 
     // Notify Parent if requested
-    if (options?.notifyParent && patient?.parentUserId) {
-      const notif3: Notification = {
-        id: `notif-${Date.now()}-3`,
-        userId: patient.parentUserId,
-        targetRole: 'parent',
-        type: 'session_scheduled',
-        message: `Therapist Update for ${childName}'s session (${slotTime}): Dr. Sweety Bhatnagar has assigned ${
-          newTherapist?.name || 'our clinical specialist'
-        } for today's session.`,
-        read: false,
-        createdAt: new Date().toISOString(),
-        meta: { sessionId, patientId: session.patientId },
-      };
-      createdNotifs.push(notif3);
+    if (options?.notifyParent) {
+      if (patient?.parentUserId) {
+        const notif3: Notification = {
+          id: `notif-${Date.now()}-3`,
+          userId: patient.parentUserId,
+          targetRole: 'parent',
+          type: 'session_scheduled',
+          message: `Therapist Update for ${childName}'s session (${slotTime}): Dr. Sweety Bhatnagar has assigned ${
+            newTherapist?.name || 'our clinical specialist'
+          } for today's session.`,
+          read: false,
+          createdAt: new Date().toISOString(),
+          meta: { sessionId, patientId: session.patientId },
+        };
+        createdNotifs.push(notif3);
+      }
+
+      // Automatically dispatch real-time WhatsApp & SMS alert to Parent
+      triggerTherapistSwapWhatsAppAlert({
+        sessionId,
+        newTherapistId,
+        reason: reasonNote,
+      }).catch((err) =>
+        console.error('Failed to dispatch therapist swap WhatsApp alert:', err)
+      );
     }
 
     this.state.notifications = [...createdNotifs, ...this.state.notifications];
@@ -1033,6 +1052,18 @@ class Store {
     modifiedSessions.forEach((s) => cloudSaveSession(s));
     if (updatedPatient) cloudSavePatient(updatedPatient);
     createdNotifs.forEach((n) => cloudSaveNotification(n));
+  }
+
+  async triggerSessionWhatsAppSequence(
+    sessionId: string,
+    options?: {
+      customType?: 'reminder_24h' | 'reminder_2h' | 'booking_alert';
+      channel?: 'whatsapp' | 'sms';
+    }
+  ) {
+    const session = this.state.sessions.find((s) => s.id === sessionId);
+    if (!session) return { success: false, error: 'Session not found' };
+    return processSessionMessageSequence(session, options);
   }
 
   reassignPatientPrimaryTherapist(
@@ -1896,6 +1927,7 @@ class Store {
       dailySlotConfigs: {},
       weeklySlotTemplates: [...DEFAULT_WEEKLY_SLOT_TEMPLATES],
       emailLogs: [],
+      messageLogs: [],
       isCloudSynced: true,
       cloudError: null,
     };

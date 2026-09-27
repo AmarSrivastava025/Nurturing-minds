@@ -20,6 +20,7 @@ import {
   ChevronDown,
   LogOut,
   Mail,
+  MessageSquare,
 } from 'lucide-react';
 import { store } from './services/store';
 import { LoginPage } from './components/Auth/LoginPage';
@@ -44,6 +45,7 @@ import { VideoPublisher } from './components/Admin/VideoPublisher';
 import { InviteManager } from './components/Admin/InviteManager';
 import { MemberAccountManager } from './components/Admin/MemberAccountManager';
 import { EmailAutomationManager } from './components/Admin/EmailAutomationManager';
+import { WhatsAppAutomationManager } from './components/Admin/WhatsAppAutomationManager';
 
 // Member & Therapist Components
 import { MemberView } from './components/Member/MemberView';
@@ -143,6 +145,12 @@ export function App() {
       label: 'Email Automation',
       icon: Mail,
       badge: state.emailLogs && state.emailLogs.length > 0 ? String(state.emailLogs.length) : 'Active',
+    },
+    {
+      id: 'whatsapp_alerts',
+      label: 'WhatsApp & SMS',
+      icon: MessageSquare,
+      badge: state.messageLogs && state.messageLogs.length > 0 ? String(state.messageLogs.length) : 'Active',
     },
     {
       id: 'approval_queue',
@@ -258,7 +266,7 @@ export function App() {
                   {item.badge && (
                     <span
                       className={`ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                        item.id === 'email_sequence'
+                        item.id === 'email_sequence' || item.id === 'whatsapp_alerts'
                           ? 'bg-emerald-400 text-slate-900 shadow-2xs font-extrabold'
                           : 'bg-[#F27D26] text-white'
                       }`}
@@ -377,18 +385,33 @@ export function App() {
 
             {/* Quick Email Automation Button for Admin */}
             {currentUser.role === 'admin' && (
-              <button
-                onClick={() => setAdminTab('email_sequence')}
-                className={`hidden lg:flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition cursor-pointer ${
-                  adminTab === 'email_sequence'
-                    ? 'bg-[#6D0281] text-white border-[#6D0281]'
-                    : 'bg-purple-50 text-[#6D0281] border-purple-200 hover:bg-purple-100'
-                }`}
-                title="Open Email Automation Manager"
-              >
-                <Mail className="w-3.5 h-3.5" />
-                <span>Email Automation</span>
-              </button>
+              <>
+                <button
+                  onClick={() => setAdminTab('email_sequence')}
+                  className={`hidden lg:flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition cursor-pointer ${
+                    adminTab === 'email_sequence'
+                      ? 'bg-[#6D0281] text-white border-[#6D0281]'
+                      : 'bg-purple-50 text-[#6D0281] border-purple-200 hover:bg-purple-100'
+                  }`}
+                  title="Open Email Automation Manager"
+                >
+                  <Mail className="w-3.5 h-3.5" />
+                  <span>Email Automation</span>
+                </button>
+
+                <button
+                  onClick={() => setAdminTab('whatsapp_alerts')}
+                  className={`hidden lg:flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition cursor-pointer ${
+                    adminTab === 'whatsapp_alerts'
+                      ? 'bg-emerald-600 text-white border-emerald-600'
+                      : 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
+                  }`}
+                  title="Open WhatsApp & SMS Automation Center"
+                >
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  <span>WhatsApp & SMS</span>
+                </button>
+              </>
             )}
 
             {/* Install PWA Prompt */}
@@ -574,6 +597,14 @@ export function App() {
                 {adminTab === 'email_sequence' && (
                   <EmailAutomationManager
                     emailLogs={state.emailLogs || []}
+                    sessions={sessions}
+                    patients={patients}
+                    therapists={therapists}
+                  />
+                )}
+                {adminTab === 'whatsapp_alerts' && (
+                  <WhatsAppAutomationManager
+                    messageLogs={state.messageLogs || []}
                     sessions={sessions}
                     patients={patients}
                     therapists={therapists}

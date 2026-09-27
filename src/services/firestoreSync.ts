@@ -26,6 +26,7 @@ import {
   Session,
   Therapist,
   EmailLog,
+  MessageLog,
 } from '../types';
 import { DEFAULT_WEEKLY_SLOT_TEMPLATES } from '../utils/slotUtils';
 import {
@@ -43,6 +44,11 @@ import {
   processSessionEmailSequence,
   listenToSessionsAndSendEmailSequences,
 } from './automation/email-confirmation-sequence';
+import {
+  processSessionMessageSequence,
+  listenToSessionsAndSendWhatsAppSequences,
+  cloudSaveMessageLog,
+} from './automation/whatsapp-sms-service';
 
 export interface FirestoreCollectionsData {
   patients?: Patient[];
@@ -59,6 +65,7 @@ export interface FirestoreCollectionsData {
   publishedVideo?: PublishedVideo | null;
   weeklySlotTemplates?: DayOfWeekSlotTemplate[];
   emailLogs?: EmailLog[];
+  messageLogs?: MessageLog[];
 }
 
 /**
@@ -365,9 +372,26 @@ export function subscribeToFirestore(
     );
     unsubs.push(unsubsEmailLogs);
 
-    // Ensure session email sequence automation listener is active
+    // 15. Message Logs: Automated WhatsApp & SMS Reminders & Alerts
+    const unsubsMessageLogs = onSnapshot(
+      collection(db, 'messageLogs'),
+      (snap) => {
+        const logs: MessageLog[] = [];
+        snap.forEach((d) => logs.push(d.data() as MessageLog));
+        // Sort newest first
+        logs.sort((a, b) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime());
+        onUpdate({ messageLogs: logs });
+      },
+      (err) => onError?.(err)
+    );
+    unsubs.push(unsubsMessageLogs);
+
+    // Ensure session email and WhatsApp sequence automation listeners are active
     const unsubsAutomation = listenToSessionsAndSendEmailSequences();
     unsubs.push(unsubsAutomation);
+
+    const unsubsWhatsAppAutomation = listenToSessionsAndSendWhatsAppSequences();
+    unsubs.push(unsubsWhatsAppAutomation);
   } catch (err: any) {
     onError?.(err);
   }
@@ -508,6 +532,8 @@ export async function cloudWipeForCutover(): Promise<void> {
     'invites',
     'notifications',
     'dailySlotConfigs',
+    'emailLogs',
+    'messageLogs',
   ];
 
   for (const colName of collectionsToWipe) {

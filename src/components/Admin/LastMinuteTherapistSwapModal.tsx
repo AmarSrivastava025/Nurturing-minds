@@ -428,7 +428,7 @@ export const LastMinuteTherapistSwapModal: React.FC<LastMinuteTherapistSwapModal
                   className="rounded text-[#6D0281] focus:ring-[#6D0281]"
                 />
                 <span className="font-medium text-slate-700">
-                  Notify parent via Parent Portal notification of therapist update
+                  Notify parent via Parent Portal & automated WhatsApp/SMS of therapist update
                 </span>
               </label>
             </div>

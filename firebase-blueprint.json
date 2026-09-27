@@ -124,6 +124,24 @@
         "error": { "type": "string", "required": false },
         "retryCount": { "type": "number", "required": false }
       }
+    },
+    "messageLogs": {
+      "collection": "messageLogs",
+      "description": "Automated WhatsApp and SMS reminders, 24h & 2h alerts, and therapist swap notifications",
+      "fields": {
+        "id": { "type": "string", "required": true },
+        "sessionId": { "type": "string", "required": true },
+        "recipientPhone": { "type": "string", "required": true },
+        "recipientName": { "type": "string", "required": true },
+        "childName": { "type": "string", "required": true },
+        "channel": { "type": "string", "required": true },
+        "messageType": { "type": "string", "required": true },
+        "sentAt": { "type": "string", "required": true },
+        "status": { "type": "string", "required": true },
+        "body": { "type": "string", "required": true },
+        "error": { "type": "string", "required": false },
+        "retryCount": { "type": "number", "required": false }
+      }
     }
   }
 }

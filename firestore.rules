@@ -10,5 +10,10 @@ service cloud.firestore {
     match /emailLogs/{document=**} {
       allow read, create, write, update: if true;
     }
+
+    // Dedicated rule for messageLogs collection (automated WhatsApp & SMS alerts)
+    match /messageLogs/{document=**} {
+      allow read, create, write, update: if true;
+    }
   }
 }
