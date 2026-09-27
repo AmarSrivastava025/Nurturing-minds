@@ -110,6 +110,20 @@
       "fields": {
         "id": { "type": "string", "required": true }
       }
+    },
+    "emailLogs": {
+      "collection": "emailLogs",
+      "description": "Automated email sequences: Booking Confirmation, 2-Day Reminder, and 1-Day Feedback",
+      "fields": {
+        "id": { "type": "string", "required": true },
+        "sessionId": { "type": "string", "required": true },
+        "recipientEmail": { "type": "string", "required": true },
+        "emailType": { "type": "string", "required": true },
+        "sentAt": { "type": "string", "required": true },
+        "status": { "type": "string", "required": true },
+        "error": { "type": "string", "required": false },
+        "retryCount": { "type": "number", "required": false }
+      }
     }
   }
 }

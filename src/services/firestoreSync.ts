@@ -25,6 +25,7 @@ import {
   PublishedVideo,
   Session,
   Therapist,
+  EmailLog,
 } from '../types';
 import { DEFAULT_WEEKLY_SLOT_TEMPLATES } from '../utils/slotUtils';
 import {
@@ -38,6 +39,10 @@ import {
   setDoc,
   writeBatch,
 } from './firebase';
+import {
+  processSessionEmailSequence,
+  listenToSessionsAndSendEmailSequences,
+} from './automation/email-confirmation-sequence';
 
 export interface FirestoreCollectionsData {
   patients?: Patient[];
@@ -53,6 +58,7 @@ export interface FirestoreCollectionsData {
   doctorProfile?: DoctorProfile;
   publishedVideo?: PublishedVideo | null;
   weeklySlotTemplates?: DayOfWeekSlotTemplate[];
+  emailLogs?: EmailLog[];
 }
 
 /**
@@ -344,6 +350,24 @@ export function subscribeToFirestore(
       (err) => onError?.(err)
     );
     unsubs.push(unsubsTemplates);
+
+    // 14. Email Logs: Automated Email Confirmation & Reminders
+    const unsubsEmailLogs = onSnapshot(
+      collection(db, 'emailLogs'),
+      (snap) => {
+        const logs: EmailLog[] = [];
+        snap.forEach((d) => logs.push(d.data() as EmailLog));
+        // Sort newest first
+        logs.sort((a, b) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime());
+        onUpdate({ emailLogs: logs });
+      },
+      (err) => onError?.(err)
+    );
+    unsubs.push(unsubsEmailLogs);
+
+    // Ensure session email sequence automation listener is active
+    const unsubsAutomation = listenToSessionsAndSendEmailSequences();
+    unsubs.push(unsubsAutomation);
   } catch (err: any) {
     onError?.(err);
   }
@@ -393,9 +417,16 @@ export async function cloudDeleteTherapist(id: string): Promise<void> {
   await deleteDoc(doc(db, 'therapists', id));
 }
 
-export async function cloudSaveSession(session: Session): Promise<void> {
+export async function cloudSaveSession(session: Session, isNewBooking = false): Promise<void> {
   const ref = doc(db, 'sessions', session.id);
   await setDoc(ref, sanitizeForFirestore(session), { merge: true });
+
+  // If newly booked or scheduled, trigger email sequence immediately
+  if (isNewBooking || session.status === 'scheduled') {
+    processSessionEmailSequence(session.id, session).catch((err) => {
+      console.warn('[AUTOMATION] Error triggering email sequence for session:', err);
+    });
+  }
 }
 
 export async function cloudDeleteSession(id: string): Promise<void> {

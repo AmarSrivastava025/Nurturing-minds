@@ -19,6 +19,7 @@ import {
   Key,
   ChevronDown,
   LogOut,
+  Mail,
 } from 'lucide-react';
 import { store } from './services/store';
 import { LoginPage } from './components/Auth/LoginPage';
@@ -42,6 +43,7 @@ import { DoctorProfileManager } from './components/Admin/DoctorProfileManager';
 import { VideoPublisher } from './components/Admin/VideoPublisher';
 import { InviteManager } from './components/Admin/InviteManager';
 import { MemberAccountManager } from './components/Admin/MemberAccountManager';
+import { EmailAutomationManager } from './components/Admin/EmailAutomationManager';
 
 // Member & Therapist Components
 import { MemberView } from './components/Member/MemberView';
@@ -154,6 +156,12 @@ export function App() {
       badge: String(patients.length),
     },
     { id: 'video', label: 'Broadcast Video', icon: Video },
+    {
+      id: 'email_sequence',
+      label: 'Email Automation',
+      icon: Mail,
+      badge: state.emailLogs && state.emailLogs.length > 0 ? String(state.emailLogs.length) : undefined,
+    },
     { id: 'invites', label: 'Invites & Cutover', icon: KeyRound },
   ];
 
@@ -540,6 +548,14 @@ export function App() {
                 )}
                 {adminTab === 'video' && (
                   <VideoPublisher publishedVideo={publishedVideo} />
+                )}
+                {adminTab === 'email_sequence' && (
+                  <EmailAutomationManager
+                    emailLogs={state.emailLogs || []}
+                    sessions={sessions}
+                    patients={patients}
+                    therapists={therapists}
+                  />
                 )}
                 {adminTab === 'invites' && (
                   <InviteManager invites={invites} patients={patients} />

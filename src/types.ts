@@ -178,3 +178,19 @@ export interface UserSession {
   patientId?: string; // if role === 'parent'
   therapistId?: string; // if role === 'therapist'
 }
+
+export interface EmailLog {
+  id: string;
+  sessionId: string;
+  recipientEmail: string;
+  recipientName?: string;
+  childName?: string;
+  therapistName?: string;
+  emailType: 'booking_confirmation' | 'reminder_2days' | 'feedback_1day';
+  sentAt: string; // ISO timestamp
+  status: 'sent' | 'failed' | 'scheduled';
+  error?: string | null;
+  subject?: string;
+  retryCount?: number;
+  scheduledFor?: string;
+}

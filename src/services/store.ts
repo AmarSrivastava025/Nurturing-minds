@@ -28,6 +28,7 @@ import {
   Session,
   Therapist,
   UserSession,
+  EmailLog,
 } from '../types';
 import {
   calculate45MinEndTime,
@@ -61,6 +62,7 @@ import {
   seedFirestoreIfEmpty,
   subscribeToFirestore,
 } from './firestoreSync';
+import { processSessionEmailSequence } from './automation/email-confirmation-sequence';
 
 export interface StoreState {
   patients: Patient[];
@@ -77,6 +79,7 @@ export interface StoreState {
   currentUser: UserSession | null;
   dailySlotConfigs: Record<string, DailySlotConfig>;
   weeklySlotTemplates: DayOfWeekSlotTemplate[];
+  emailLogs: EmailLog[];
   isCloudSynced: boolean;
   cloudError: string | null;
 }
@@ -143,6 +146,7 @@ function loadInitialState(): StoreState {
         programs: parsed.programs || SEED_PROGRAMS,
         dailySlotConfigs: parsed.dailySlotConfigs || {},
         weeklySlotTemplates: parsed.weeklySlotTemplates || [...DEFAULT_WEEKLY_SLOT_TEMPLATES],
+        emailLogs: parsed.emailLogs || [],
         isCloudSynced: false,
         cloudError: null,
       };
@@ -194,6 +198,7 @@ function getSeedState(): StoreState {
     currentUser: { ...DEFAULT_USER },
     dailySlotConfigs: {},
     weeklySlotTemplates: [...DEFAULT_WEEKLY_SLOT_TEMPLATES],
+    emailLogs: [],
     isCloudSynced: false,
     cloudError: null,
   };
@@ -301,6 +306,10 @@ class Store {
           }
           if (cloudData.weeklySlotTemplates !== undefined) {
             nextState.weeklySlotTemplates = cloudData.weeklySlotTemplates;
+            hasChanges = true;
+          }
+          if (cloudData.emailLogs !== undefined) {
+            nextState.emailLogs = cloudData.emailLogs;
             hasChanges = true;
           }
 
@@ -860,11 +869,19 @@ class Store {
     this.state.sessions = [...this.state.sessions, newSession];
     this.notify();
 
-    cloudSaveSession(newSession).catch((err) =>
+    cloudSaveSession(newSession, true).catch((err) =>
       console.error('Error saving session to Firestore:', err)
     );
 
     return newSession;
+  }
+
+  getEmailLogs(): EmailLog[] {
+    return this.state.emailLogs || [];
+  }
+
+  async triggerSessionEmailSequence(sessionId: string) {
+    return processSessionEmailSequence(sessionId);
   }
 
   updateSession(id: string, updates: Partial<Session>) {
@@ -1878,6 +1895,7 @@ class Store {
       currentUser: { ...DEFAULT_USER },
       dailySlotConfigs: {},
       weeklySlotTemplates: [...DEFAULT_WEEKLY_SLOT_TEMPLATES],
+      emailLogs: [],
       isCloudSynced: true,
       cloudError: null,
     };

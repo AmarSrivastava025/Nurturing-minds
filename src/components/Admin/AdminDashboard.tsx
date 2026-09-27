@@ -219,6 +219,40 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
       </div>
 
+      {/* Service 3 Email Automation Sequence Status Banner */}
+      <div
+        onClick={() => onNavigateTab('email_sequence')}
+        className="bg-gradient-to-r from-teal-50 via-teal-100/50 to-indigo-50 border border-teal-200/80 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 cursor-pointer hover:border-teal-400 transition group shadow-2xs"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-teal-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+            <Send className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-teal-800">
+                Service 3: Active
+              </span>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className="text-[11px] bg-white text-teal-700 px-2 py-0.5 rounded-full border border-teal-200 font-medium">
+                Resend API Ready
+              </span>
+            </div>
+            <p className="text-sm font-semibold text-slate-900 mt-0.5">
+              Automated Email Confirmation Sequence Active
+            </p>
+            <p className="text-xs text-slate-500">
+              Immediate Booking Confirmation &middot; 2-Day Reminder &middot; 1-Day Feedback Request
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 text-teal-700 font-semibold text-xs group-hover:translate-x-1 transition self-end sm:self-center">
+          <span>Manage Emails &amp; View Audit Logs</span>
+          <ChevronRight className="w-4 h-4" />
+        </div>
+      </div>
+
       {/* Main 12-Column Grid Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left 8 Columns: Scheduled Sessions Table & Therapist Caseloads */}

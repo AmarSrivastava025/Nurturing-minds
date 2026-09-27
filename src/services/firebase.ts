@@ -3,12 +3,15 @@ import {
   getFirestore,
   collection,
   doc,
+  getDoc,
   setDoc,
   updateDoc,
   deleteDoc,
   getDocs,
   onSnapshot,
   writeBatch,
+  query,
+  where,
   type Firestore,
 } from 'firebase/firestore';
 import config from '../../firebase-applet-config.json';
@@ -48,10 +51,13 @@ export function sanitizeForFirestore<T>(data: T): T {
 export {
   collection,
   doc,
+  getDoc,
   setDoc,
   updateDoc,
   deleteDoc,
   getDocs,
   onSnapshot,
   writeBatch,
+  query,
+  where,
 };
