@@ -11,19 +11,30 @@ import {
   getDocs,
 } from 'firebase/firestore';
 import { Resend } from 'resend';
-import config from '../../firebase-applet-config.json';
+const FIREBASE_CONFIG = {
+  projectId: process.env.FIREBASE_PROJECT_ID || "balmy-wharf-97dgj",
+  appId: "1:1038683265587:web:016f51594477b4b1ada146",
+  apiKey: "AIzaSyAnbryZy8wAuJSN5dC0_OPjeQn5Tpd6B9w",
+  authDomain: "balmy-wharf-97dgj.firebaseapp.com",
+  firestoreDatabaseId: process.env.FIRESTORE_DATABASE_ID || "ai-studio-nurturingmindsth-306ae0f0-9613-4944-96ec-a37fdb5bd347",
+  storageBucket: "balmy-wharf-97dgj.firebasestorage.app",
+  messagingSenderId: "1038683265587"
+};
 
-const app = !getApps().length ? initializeApp(config) : getApp();
-const db = config.firestoreDatabaseId
-  ? getFirestore(app, config.firestoreDatabaseId)
-  : getFirestore(app);
-
-const resendApiKey = process.env.RESEND_API_KEY;
-const resend = resendApiKey ? new Resend(resendApiKey) : null;
-const fromEmail = process.env.RESEND_FROM_EMAIL || 'Nurturing Minds <connect@drsweetybhatnagar.com>';
+function getDbInstance() {
+  const app = !getApps().length ? initializeApp(FIREBASE_CONFIG) : getApp();
+  return FIREBASE_CONFIG.firestoreDatabaseId
+    ? getFirestore(app, FIREBASE_CONFIG.firestoreDatabaseId)
+    : getFirestore(app);
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
+    const resendApiKey = process.env.RESEND_API_KEY;
+    const resend = resendApiKey && !resendApiKey.startsWith('re_xxxx') ? new Resend(resendApiKey) : null;
+    const fromEmail = process.env.RESEND_FROM_EMAIL || 'Nurturing Minds <connect@drsweetybhatnagar.com>';
+    const db = getDbInstance();
+
     const nowIso = new Date().toISOString();
     const logsCol = collection(db, 'emailLogs');
     const q = query(logsCol, where('status', '==', 'scheduled'));
