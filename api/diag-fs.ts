@@ -24,35 +24,27 @@ function listDir(dir: string, depth = 0, maxDepth = 3): any {
   return out;
 }
 
-export default function handler(req: VercelRequest, res: VercelResponse) {
-  const probes: Record<string, string> = {};
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  const probes: Record<string, any> = {};
   const targets = [
-    '../_lib/email-templates',
     '../lib/email-templates',
+    '../lib/email-sender',
+    '../_lib/email-templates',
     '../src/services/automation/email-templates',
-    '../../src/services/automation/email-templates',
   ];
 
   for (const target of targets) {
     try {
-      const mod = require(target);
-      probes[target] = 'OK keys=' + Object.keys(mod).length;
+      const mod: any = await import(target);
+      probes[target] = { ok: true, exports: Object.keys(mod).length };
     } catch (e: any) {
-      probes[target] = (e.code || 'ERR') + ': ' + String(e.message).split('\n')[0];
+      probes[target] = { ok: false, message: String(e?.message).split('\n')[0].slice(0, 200) };
     }
-  }
-
-  let dirname: string;
-  try {
-    dirname = __dirname;
-  } catch (e: any) {
-    dirname = 'unavailable: ' + e.message;
   }
 
   return res.status(200).json({
     cwd: process.cwd(),
-    dirname,
-    apiTree: listDir(path.join(process.cwd(), 'api'), 0, 3),
+    cwdTree: listDir(process.cwd(), 0, 2),
     probes,
   });
 }

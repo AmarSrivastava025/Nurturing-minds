@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
-import { DEFAULT_FROM_EMAIL, getResendClient } from '../_lib/email-sender';
-import { processScheduledEmails } from '../_lib/scheduled-emails';
+import { DEFAULT_FROM_EMAIL, getResendClient } from '../lib/email-sender';
+import { processScheduledEmails } from '../lib/scheduled-emails';
 
 const FIREBASE_CONFIG = {
   projectId: process.env.FIREBASE_PROJECT_ID || 'balmy-wharf-97dgj',
