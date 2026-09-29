@@ -1,27 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
-import { DEFAULT_FROM_EMAIL, getResendClient } from '../lib/email-sender';
-import { processScheduledEmails } from '../lib/scheduled-emails';
 
-const FIREBASE_CONFIG = {
-  projectId: process.env.FIREBASE_PROJECT_ID || 'balmy-wharf-97dgj',
-  appId: '1:1038683265587:web:016f51594477b4b1ada146',
-  apiKey: process.env.FIREBASE_API_KEY || 'AIzaSyAnbryZy8wAuJSN5dC0_OPjeQn5Tpd6B9w',
-  authDomain: 'balmy-wharf-97dgj.firebaseapp.com',
-  firestoreDatabaseId:
-    process.env.FIRESTORE_DATABASE_ID ||
-    'ai-studio-nurturingmindsth-306ae0f0-9613-4944-96ec-a37fdb5bd347',
-  storageBucket: 'balmy-wharf-97dgj.firebasestorage.app',
-  messagingSenderId: '1038683265587',
-};
-
-function getDbInstance() {
-  const app = !getApps().length ? initializeApp(FIREBASE_CONFIG) : getApp();
-  return FIREBASE_CONFIG.firestoreDatabaseId
-    ? getFirestore(app, FIREBASE_CONFIG.firestoreDatabaseId)
-    : getFirestore(app);
-}
+const DEFAULT_APP_URL = 'https://clinic.drsweetybhatnagar.com';
 
 function isAuthorized(req: VercelRequest): boolean {
   const secret = process.env.CRON_SECRET;
@@ -39,32 +18,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const resend = getResendClient();
-  if (!resend) {
-    console.error('[EMAIL ERROR] RESEND_API_KEY is not configured on the server.');
-    return res.status(503).json({
-      success: false,
-      error: 'Email sending is not configured. Set RESEND_API_KEY in the server environment.',
-    });
-  }
+  const appUrl = (process.env.APP_URL || DEFAULT_APP_URL).replace(/\/+$/, '');
 
   try {
-    const db = getDbInstance();
-    const result = await processScheduledEmails({
-      db,
-      resend,
-      fromEmail: DEFAULT_FROM_EMAIL,
-      appUrl: process.env.APP_URL || '',
-      feedbackFormUrl: process.env.RESEND_FEEDBACK_FORM_URL || '',
+    const response = await fetch(`${appUrl}/api/webhook/email-confirmation-sequence`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'process_scheduled' }),
     });
+
+    const data: any = await response.json().catch(() => null);
+
+    if (!response.ok || !data) {
+      console.error('[EMAIL ERROR] Scheduled run failed:', response.status, data?.error);
+      return res.status(502).json({
+        success: false,
+        error: 'Scheduled email run failed.',
+        detail: data?.error || `Automation endpoint returned ${response.status}`,
+      });
+    }
 
     return res.status(200).json({
       success: true,
       timestamp: new Date().toISOString(),
-      ...result,
+      ...data,
     });
   } catch (error: any) {
-    console.error('[EMAIL ERROR] Scheduled email run failed:', error?.message || error);
+    console.error('[EMAIL ERROR] Scheduled run could not reach the automation endpoint:', error?.message || error);
     return res.status(500).json({ success: false, error: 'Scheduled email run failed.' });
   }
 }
