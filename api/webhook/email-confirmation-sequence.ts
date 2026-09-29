@@ -4,9 +4,9 @@ import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
 import {
   generateBookingConfirmationHtml,
   type EmailBranding,
-} from '../../src/services/automation/email-templates';
-import { DEFAULT_FROM_EMAIL, getResendClient, sendEmailWithRetry } from '../../src/services/automation/email-sender';
-import { processScheduledEmails } from '../../src/services/automation/scheduled-emails';
+} from '../_lib/email-templates';
+import { DEFAULT_FROM_EMAIL, getResendClient, sendEmailWithRetry } from '../_lib/email-sender';
+import { processScheduledEmails } from '../_lib/scheduled-emails';
 
 const FIREBASE_CONFIG = {
   projectId: process.env.FIREBASE_PROJECT_ID || 'balmy-wharf-97dgj',
