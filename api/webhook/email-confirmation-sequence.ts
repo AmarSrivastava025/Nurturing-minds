@@ -7,6 +7,7 @@ import {
   getDoc,
   getDocs,
   query,
+  runTransaction,
   setDoc,
   updateDoc,
   where,
@@ -442,14 +443,47 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const bookingLogId = `booking-${sessionId}`;
     const bookingLogRef = doc(db, 'emailLogs', bookingLogId);
-    const existingLog = await getDoc(bookingLogRef);
-    if (existingLog.exists() && existingLog.data()?.status === 'sent') {
+
+    const claim: { proceed: boolean; recipientEmail?: string } = await runTransaction(
+      db,
+      async (tx) => {
+        const snap = await tx.get(bookingLogRef);
+
+        if (snap.exists()) {
+          const existing: any = snap.data();
+          if (existing?.status === 'sent') {
+            return { proceed: false, recipientEmail: existing.recipientEmail };
+          }
+          if (existing?.status === 'sending') {
+            const startedAt = existing.startedAt ? Date.parse(existing.startedAt) : 0;
+            if (Date.now() - startedAt < 120000) {
+              return { proceed: false, recipientEmail: existing.recipientEmail };
+            }
+          }
+        }
+
+        tx.set(
+          bookingLogRef,
+          {
+            id: bookingLogId,
+            sessionId,
+            status: 'sending',
+            startedAt: new Date().toISOString(),
+          },
+          { merge: true }
+        );
+
+        return { proceed: true };
+      }
+    );
+
+    if (!claim.proceed) {
       return res.status(200).json({
         success: true,
         alreadySent: true,
         sessionId,
         logId: bookingLogId,
-        recipientEmail: existingLog.data()?.recipientEmail,
+        recipientEmail: claim.recipientEmail,
       });
     }
 
