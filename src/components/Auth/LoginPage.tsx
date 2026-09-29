@@ -38,11 +38,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   onLogin,
   onOpenInviteRegistration,
 }) => {
-  const [activeTab, setActiveTab] = useState<Role | 'invite'>('admin');
+  // Default to parent portal for parents arriving at the clinic link
+  const [activeTab, setActiveTab] = useState<Role | 'invite'>('parent');
 
-  // Universal / Role credential inputs
-  const [loginIdInput, setLoginIdInput] = useState('connect@drsweetybhatnagar.com');
-  const [passwordInput, setPasswordInput] = useState('admin123');
+  // Universal / Role credential inputs - START BLANK FOR SECURITY
+  const [loginIdInput, setLoginIdInput] = useState('');
+  const [passwordInput, setPasswordInput] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
   // Invite code tab state
@@ -53,38 +54,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // When switching tabs, initialize with sensible defaults
+  // When switching tabs, clear inputs to maintain security
   const handleTabChange = (newTab: Role | 'invite') => {
     setActiveTab(newTab);
     setErrorMessage('');
     setShowPassword(false);
-
-    if (newTab === 'admin') {
-      setLoginIdInput(doctorProfile.adminLoginId || 'connect@drsweetybhatnagar.com');
-      setPasswordInput(doctorProfile.adminPassword || 'admin123');
-    } else if (newTab === 'therapist') {
-      const firstTh = therapists[0];
-      setLoginIdInput(firstTh?.loginId || firstTh?.email || 'ritu.verma@nurturingminds.com');
-      setPasswordInput(firstTh?.password || 'therapist123');
-    } else if (newTab === 'parent') {
-      const firstPat = patients[0];
-      setLoginIdInput(firstPat?.parentLoginId || firstPat?.parentEmail || 'priya.sharma@example.com');
-      setPasswordInput(firstPat?.parentPassword || 'parent123');
-    }
-  };
-
-  // Quick select helper for therapists
-  const selectTherapistCredentials = (th: Therapist) => {
-    setLoginIdInput(th.loginId || th.email);
-    setPasswordInput(th.password || 'therapist123');
-    setErrorMessage('');
-  };
-
-  // Quick select helper for parents
-  const selectPatientCredentials = (pat: Patient) => {
-    setLoginIdInput(pat.parentLoginId || pat.parentEmail || pat.motherContact);
-    setPasswordInput(pat.parentPassword || 'parent123');
-    setErrorMessage('');
+    setLoginIdInput('');
+    setPasswordInput('');
   };
 
   // Submit Login credentials
@@ -104,19 +80,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     // Success
     onLogin(result.user);
     setIsSubmitting(false);
-  };
-
-  // Direct 1-Click Login as Dr. Sweety Bhatnagar (Director)
-  const handleQuickAdminLogin = () => {
-    setErrorMessage('');
-    const adminUser: UserSession = {
-      id: 'user-admin',
-      role: 'admin',
-      name: doctorProfile.name || 'Dr. Sweety Bhatnagar',
-      email: doctorProfile.contactEmail || 'connect@drsweetybhatnagar.com',
-    };
-    store.login(adminUser);
-    onLogin(adminUser);
   };
 
   // Handle Invite Code validation
@@ -226,39 +189,22 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                 </div>
               </div>
             </div>
-
-            {/* Fast 1-Click Sign-In for Dr. Sweety Bhatnagar */}
-            <div className="mt-4 pt-3 border-t border-white/15 flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2 text-xs text-purple-100">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="font-medium">Director Account: <strong>{doctorProfile.name}</strong></span>
-              </div>
-              <button
-                type="button"
-                id="btn-quick-admin-login"
-                onClick={handleQuickAdminLogin}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white text-[#6D0281] hover:bg-purple-50 text-xs font-bold transition shadow-xs hover:shadow-md cursor-pointer"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                <span>Instant Sign In as Dr. Sweety</span>
-              </button>
-            </div>
           </div>
 
           {/* Role Navigation Tabs */}
           <div className="grid grid-cols-4 border-b border-slate-100 bg-slate-50/50 p-1.5 text-xs font-bold text-slate-600">
             <button
               type="button"
-              id="tab-admin"
-              onClick={() => handleTabChange('admin')}
+              id="tab-parent"
+              onClick={() => handleTabChange('parent')}
               className={`py-2 px-1 rounded-xl transition flex flex-col sm:flex-row items-center justify-center gap-1 cursor-pointer ${
-                activeTab === 'admin'
+                activeTab === 'parent'
                   ? 'bg-white text-[#6D0281] shadow-xs border border-purple-100'
                   : 'hover:bg-slate-100/70 hover:text-slate-900'
               }`}
             >
-              <UserCheck className="w-4 h-4 text-[#6D0281]" />
-              <span>Director</span>
+              <Heart className="w-4 h-4 text-rose-500" />
+              <span>Parent Portal</span>
             </button>
 
             <button
@@ -277,16 +223,16 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
             <button
               type="button"
-              id="tab-parent"
-              onClick={() => handleTabChange('parent')}
+              id="tab-admin"
+              onClick={() => handleTabChange('admin')}
               className={`py-2 px-1 rounded-xl transition flex flex-col sm:flex-row items-center justify-center gap-1 cursor-pointer ${
-                activeTab === 'parent'
+                activeTab === 'admin'
                   ? 'bg-white text-[#6D0281] shadow-xs border border-purple-100'
                   : 'hover:bg-slate-100/70 hover:text-slate-900'
               }`}
             >
-              <Heart className="w-4 h-4 text-rose-500" />
-              <span>Members</span>
+              <UserCheck className="w-4 h-4 text-[#6D0281]" />
+              <span>Director</span>
             </button>
 
             <button
@@ -313,10 +259,44 @@ export const LoginPage: React.FC<LoginPageProps> = ({
               </div>
             )}
 
-            {/* TAB 1, 2, 3: CREDENTIAL LOGIN (Director, Therapist, Member/Parent) */}
+            {/* TAB 1, 2, 3: CREDENTIAL LOGIN (Parent, Therapist, Director) */}
             {activeTab !== 'invite' && (
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Role description banner */}
+                {activeTab === 'parent' && (
+                  <div className="p-3.5 bg-rose-50/70 rounded-2xl border border-rose-100 text-xs text-rose-900 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <p className="font-bold flex items-center gap-1.5 text-rose-800">
+                        <Heart className="w-3.5 h-3.5 text-rose-600" />
+                        <span>Registered Parent & Family Portal</span>
+                      </p>
+                      <span className="text-[10px] font-bold bg-rose-100 text-rose-800 px-2 py-0.5 rounded">
+                        Family Access
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-rose-700">
+                      Sign in with your registered Parent Mobile Number, Email, or Login ID and Password to view your child&apos;s therapy milestones, schedule, and receipts.
+                    </p>
+                  </div>
+                )}
+
+                {activeTab === 'therapist' && (
+                  <div className="p-3.5 bg-blue-50/70 rounded-2xl border border-blue-100 text-xs text-blue-900 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <p className="font-bold flex items-center gap-1.5 text-blue-800">
+                        <Stethoscope className="w-3.5 h-3.5" />
+                        <span>Clinical Staff Login (Therapist Portal)</span>
+                      </p>
+                      <span className="text-[10px] font-bold bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
+                        Staff Auth
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-blue-700">
+                      Enter your clinical Staff Login ID and password to access schedules and log quick session notes.
+                    </p>
+                  </div>
+                )}
+
                 {activeTab === 'admin' && (
                   <div className="p-3.5 bg-purple-50/70 rounded-2xl border border-purple-100 flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -335,94 +315,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                       </div>
                     </div>
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#6D0281] text-white">
-                      Full Admin Access
+                      Director Access
                     </span>
-                  </div>
-                )}
-
-                {activeTab === 'therapist' && (
-                  <div className="p-3.5 bg-blue-50/70 rounded-2xl border border-blue-100 text-xs text-blue-900 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <p className="font-bold flex items-center gap-1.5 text-blue-800">
-                        <Stethoscope className="w-3.5 h-3.5" />
-                        <span>Clinical Staff Login (Therapist Portal)</span>
-                      </p>
-                      <span className="text-[10px] font-bold bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
-                        Staff Auth
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-blue-700">
-                      Enter your clinical Staff Login ID and password to access schedules and log quick session notes.
-                    </p>
-
-                    {/* Quick Staff Selector Chips */}
-                    <div className="pt-1">
-                      <span className="text-[10px] text-slate-500 font-semibold block mb-1">
-                        Select Staff Member to Auto-Fill Credentials:
-                      </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {therapists.map((th) => {
-                          const isActive = loginIdInput === (th.loginId || th.email);
-                          return (
-                            <button
-                              key={th.id}
-                              type="button"
-                              onClick={() => selectTherapistCredentials(th)}
-                              className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition cursor-pointer border ${
-                                isActive
-                                  ? 'bg-[#6D0281] text-white border-[#6D0281]'
-                                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                              }`}
-                            >
-                              {th.name}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {activeTab === 'parent' && (
-                  <div className="p-3.5 bg-rose-50/70 rounded-2xl border border-rose-100 text-xs text-rose-900 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <p className="font-bold flex items-center gap-1.5 text-rose-800">
-                        <Heart className="w-3.5 h-3.5 text-rose-600" />
-                        <span>Registered Member & Parent Portal</span>
-                      </p>
-                      <span className="text-[10px] font-bold bg-rose-100 text-rose-800 px-2 py-0.5 rounded">
-                        Family Auth
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-rose-700">
-                      Enter your Parent Login ID / Email / Mobile and Password to view your child&apos;s developmental milestones and receipts.
-                    </p>
-
-                    {/* Quick Patient Selector Chips */}
-                    <div className="pt-1">
-                      <span className="text-[10px] text-slate-500 font-semibold block mb-1">
-                        Select Family to Auto-Fill Credentials:
-                      </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {patients.map((pat) => {
-                          const isActive = loginIdInput === (pat.parentLoginId || pat.parentEmail);
-                          return (
-                            <button
-                              key={pat.id}
-                              type="button"
-                              onClick={() => selectPatientCredentials(pat)}
-                              className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition cursor-pointer border ${
-                                isActive
-                                  ? 'bg-[#6D0281] text-white border-[#6D0281]'
-                                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                              }`}
-                            >
-                              {pat.childName} ({pat.motherName})
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
                   </div>
                 )}
 
@@ -433,7 +327,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                       ? 'Admin Email / Login ID *'
                       : activeTab === 'therapist'
                       ? 'Staff Login ID or Email *'
-                      : 'Member Login ID, Email, or Mobile *'}
+                      : 'Parent Mobile, Email, or Login ID *'}
                   </label>
                   <div className="relative">
                     <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -447,31 +341,19 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                         activeTab === 'admin'
                           ? 'connect@drsweetybhatnagar.com'
                           : activeTab === 'therapist'
-                          ? 'ritu.verma@nurturingminds.com'
-                          : 'priya.sharma@example.com or mobile'
+                          ? 'e.g. ritu.verma@nurturingminds.com'
+                          : 'e.g. 9789305029 or parent email'
                       }
-                      className="w-full pl-10 pr-3.5 py-2.5 text-xs font-mono font-bold border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6D0281] focus:border-transparent transition bg-slate-50/40 focus:bg-white"
+                      className="w-full pl-10 pr-3.5 py-2.5 text-xs font-mono font-medium border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6D0281] focus:border-transparent transition bg-slate-50/40 focus:bg-white"
                     />
                   </div>
                 </div>
 
                 {/* Password Input Field */}
                 <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-xs font-bold text-slate-700">
-                      Password *
-                    </label>
-                    <span className="text-[10px] text-slate-400 font-medium">
-                      Default:{' '}
-                      <strong>
-                        {activeTab === 'admin'
-                          ? doctorProfile.adminPassword || 'admin123'
-                          : activeTab === 'therapist'
-                          ? 'therapist123'
-                          : 'parent123'}
-                      </strong>
-                    </span>
-                  </div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    Password *
+                  </label>
                   <div className="relative">
                     <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                     <input
@@ -480,13 +362,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                       id="universal-password-input"
                       value={passwordInput}
                       onChange={(e) => setPasswordInput(e.target.value)}
-                      placeholder="••••••••"
-                      className="w-full pl-10 pr-10 py-2.5 text-xs font-mono font-bold border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6D0281] focus:border-transparent transition bg-slate-50/40 focus:bg-white"
+                      placeholder="Enter your password"
+                      className="w-full pl-10 pr-10 py-2.5 text-xs font-mono font-medium border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6D0281] focus:border-transparent transition bg-slate-50/40 focus:bg-white"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
                     >
                       {showPassword ? (
                         <EyeOff className="w-3.5 h-3.5" />
@@ -501,13 +383,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-[11px] text-slate-600 flex items-start gap-2">
                   <HelpCircle className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
                   <p>
-                    {activeTab === 'admin' ? (
-                      <span>Need quick access? Click <strong>&quot;Instant Sign In as Dr. Sweety&quot;</strong> above.</span>
-                    ) : (
-                      <span>
-                        Forgot your password or cannot sign in? Dr. Sweety Bhatnagar can reset your password instantly from the <strong>Admin Area</strong> and give you a new login slip.
-                      </span>
-                    )}
+                    Forgot your credentials or need access? Please contact Dr. Sweety Bhatnagar at reception or call the clinic helpline at <strong>+91 97893 05029</strong>.
                   </p>
                 </div>
 
@@ -521,10 +397,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   <LogIn className="w-4 h-4" />
                   <span>
                     {activeTab === 'admin'
-                      ? 'Sign In as Dr. Sweety Bhatnagar (Admin)'
+                      ? 'Sign In as Dr. Sweety Bhatnagar'
                       : activeTab === 'therapist'
                       ? 'Sign In to Therapist Portal'
-                      : 'Sign In to Member Portal'}
+                      : 'Sign In to Parent Portal'}
                   </span>
                 </button>
               </form>
@@ -567,22 +443,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   <p className="text-[10px] text-slate-400 mt-1">
                     Check the WhatsApp / SMS message or invoice invite slip provided by Dr. Bhatnagar.
                   </p>
-                </div>
-
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-[11px] space-y-1 text-slate-600">
-                  <p className="font-bold text-slate-700">Active Test Invites in System:</p>
-                  {invites.filter((i) => !i.used).slice(0, 2).map((inv) => (
-                    <div
-                      key={inv.id}
-                      onClick={() => setInviteCode(inv.code)}
-                      className="cursor-pointer font-mono font-bold text-[#6D0281] hover:underline flex items-center justify-between"
-                    >
-                      <span>{inv.code}</span>
-                      <span className="text-[10px] text-slate-400 font-sans font-normal">
-                        ({inv.recipientName} • {inv.role})
-                      </span>
-                    </div>
-                  ))}
                 </div>
 
                 <button

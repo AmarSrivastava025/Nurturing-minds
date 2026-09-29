@@ -1,24 +1,23 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { initializeApp, getApps, getApp } from 'firebase/app';
+import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
 import {
-  getFirestore,
-  doc,
-  getDoc,
-  setDoc,
-  collection,
-  query,
-  where,
-  getDocs,
-} from 'firebase/firestore';
-import { Resend } from 'resend';
+  generateBookingConfirmationHtml,
+  type EmailBranding,
+} from '../../src/services/automation/email-templates';
+import { DEFAULT_FROM_EMAIL, getResendClient, sendEmailWithRetry } from '../../src/services/automation/email-sender';
+import { processScheduledEmails } from '../../src/services/automation/scheduled-emails';
+
 const FIREBASE_CONFIG = {
-  projectId: process.env.FIREBASE_PROJECT_ID || "balmy-wharf-97dgj",
-  appId: "1:1038683265587:web:016f51594477b4b1ada146",
-  apiKey: "AIzaSyAnbryZy8wAuJSN5dC0_OPjeQn5Tpd6B9w",
-  authDomain: "balmy-wharf-97dgj.firebaseapp.com",
-  firestoreDatabaseId: process.env.FIRESTORE_DATABASE_ID || "ai-studio-nurturingmindsth-306ae0f0-9613-4944-96ec-a37fdb5bd347",
-  storageBucket: "balmy-wharf-97dgj.firebasestorage.app",
-  messagingSenderId: "1038683265587"
+  projectId: process.env.FIREBASE_PROJECT_ID || 'balmy-wharf-97dgj',
+  appId: '1:1038683265587:web:016f51594477b4b1ada146',
+  apiKey: process.env.FIREBASE_API_KEY || 'AIzaSyAnbryZy8wAuJSN5dC0_OPjeQn5Tpd6B9w',
+  authDomain: 'balmy-wharf-97dgj.firebaseapp.com',
+  firestoreDatabaseId:
+    process.env.FIRESTORE_DATABASE_ID ||
+    'ai-studio-nurturingmindsth-306ae0f0-9613-4944-96ec-a37fdb5bd347',
+  storageBucket: 'balmy-wharf-97dgj.firebasestorage.app',
+  messagingSenderId: '1038683265587',
 };
 
 function getDbInstance() {
@@ -28,174 +27,215 @@ function getDbInstance() {
     : getFirestore(app);
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Allow CORS
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,POST');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  );
+const MAX_ATTEMPTS = 3;
 
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
-  try {
-    const resendApiKey = process.env.RESEND_API_KEY;
-    const resend = resendApiKey && !resendApiKey.startsWith('re_xxxx') ? new Resend(resendApiKey) : null;
-    const fromEmail = process.env.RESEND_FROM_EMAIL || 'Nurturing Minds <connect@drsweetybhatnagar.com>';
+  if (req.method === 'GET') {
+    return res.status(200).json({
+      status: 'online',
+      service: 'Nurturing Minds email automation',
+      resendConfigured: Boolean(getResendClient()),
+    });
+  }
 
-    if (req.method === 'GET') {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const resend = getResendClient();
+  if (!resend) {
+    console.error('[EMAIL ERROR] RESEND_API_KEY is not configured on the server.');
+    return res.status(503).json({
+      success: false,
+      error: 'Email sending is not configured. Set RESEND_API_KEY in the server environment.',
+    });
+  }
+
+  const fromEmail = DEFAULT_FROM_EMAIL;
+  const appUrl = process.env.APP_URL || '';
+  const feedbackFormUrl = process.env.RESEND_FEEDBACK_FORM_URL || '';
+  const branding: EmailBranding = { appUrl };
+
+  try {
+    const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : req.body || {};
+    const db = getDbInstance();
+
+    if (body.action === 'process_scheduled') {
+      const runResult = await processScheduledEmails({
+        db,
+        resend,
+        fromEmail,
+        appUrl,
+        feedbackFormUrl,
+      });
+      return res.status(200).json({ success: true, ...runResult });
+    }
+
+    const sessionId = String(body.sessionId || '').trim();
+    if (!sessionId) {
+      return res.status(400).json({ error: 'sessionId is required in the request body.' });
+    }
+
+    const bookingLogId = `booking-${sessionId}`;
+    const bookingLogRef = doc(db, 'emailLogs', bookingLogId);
+    const existingLog = await getDoc(bookingLogRef);
+    if (existingLog.exists() && existingLog.data()?.status === 'sent') {
       return res.status(200).json({
-        status: 'online',
-        service: 'Nurturing Minds Email Confirmation Sequence',
-        resendConfigured: !!resend,
+        success: true,
+        alreadySent: true,
+        sessionId,
+        logId: bookingLogId,
+        recipientEmail: existingLog.data()?.recipientEmail,
       });
     }
 
-    const db = getDbInstance();
+    const sessionSnap = await getDoc(doc(db, 'sessions', sessionId));
+    if (!sessionSnap.exists()) {
+      return res.status(404).json({ error: `Session ${sessionId} was not found.` });
+    }
+    const session: any = sessionSnap.data();
 
-    if (req.method === 'POST') {
-      const { sessionId, action } = req.body || {};
-
-      if (!sessionId) {
-        return res.status(400).json({ error: 'sessionId is required in request body' });
-      }
-
-      // Fetch session
-      const sessionSnap = await getDoc(doc(db, 'sessions', sessionId));
-      if (!sessionSnap.exists()) {
-        return res.status(404).json({ error: `Session ${sessionId} not found` });
-      }
-      const session = sessionSnap.data() as any;
-
-      // Fetch patient
+    let patient: any = null;
+    if (session.patientId) {
       const patientSnap = await getDoc(doc(db, 'patients', session.patientId));
-      if (!patientSnap.exists()) {
-        console.error(`[EMAIL ERROR] session ${sessionId}: Failed to fetch patient ${session.patientId}`);
-        return res.status(404).json({ error: 'Patient document not found' });
-      }
-      const patient = patientSnap.data() as any;
-      const parentEmail = patient.parentEmail;
-      const parentName = patient.motherName || patient.fatherName || 'Parent';
-      const childName = patient.childName || 'Child';
+      if (patientSnap.exists()) patient = patientSnap.data();
+    }
 
-      // Check missing parentEmail
-      if (!parentEmail || !parentEmail.includes('@')) {
-        const errorMsg = `[EMAIL ERROR] session ${sessionId}: Failed to fetch parent email (parentEmail is null)`;
-        console.error(errorMsg);
+    const parentEmail = String(patient?.parentEmail || '').trim().toLowerCase();
+    const parentName = patient?.motherName || patient?.fatherName || 'Parent';
+    const childName = patient?.childName || 'your child';
 
-        const logId = `email-${Date.now()}`;
-        await setDoc(doc(db, 'emailLogs', logId), {
-          id: logId,
-          sessionId,
-          recipientEmail: parentEmail || 'unknown',
-          emailType: 'booking_confirmation',
-          sentAt: new Date().toISOString(),
-          status: 'failed',
-          error: errorMsg,
-        });
-
-        return res.status(200).json({ success: false, error: errorMsg, logId });
-      }
-
-      // Fetch therapist
-      let therapistName = 'Dr Sweety Bhatnagar';
-      if (session.therapistId) {
-        const therapistSnap = await getDoc(doc(db, 'therapists', session.therapistId));
-        if (therapistSnap.exists()) {
-          therapistName = therapistSnap.data()?.name || therapistName;
-        }
-      }
-
-      const formattedDate = new Date(session.scheduledAt).toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
+    if (!parentEmail || !parentEmail.includes('@')) {
+      const errorMsg = `Parent email is missing or invalid for ${childName}. Add an email to the patient record to enable automation.`;
+      console.error(`[EMAIL ERROR] session ${sessionId}: ${errorMsg}`);
+      await setDoc(bookingLogRef, {
+        id: bookingLogId,
+        sessionId,
+        recipientEmail: parentEmail || 'unknown',
+        recipientName: parentName,
+        childName,
+        emailType: 'booking_confirmation',
+        subject: 'Your appointment with Dr Sweety is confirmed',
+        status: 'failed',
+        error: errorMsg,
+        sentAt: new Date().toISOString(),
+        retryCount: 0,
       });
-      const timeSlot = session.timeSlot || '45-Minute Therapy Slot';
+      return res.status(200).json({ success: false, error: errorMsg, logId: bookingLogId });
+    }
 
-      const emailHtml = `
-<div style="font-family: sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
-  <div style="text-align: center; margin-bottom: 24px;">
-    <h2 style="color: #0d9488; margin: 0;">Nurturing Minds Therapy Center</h2>
-    <p style="color: #64748b; margin: 4px 0 0 0; font-size: 14px;">Pediatric Clinical Care</p>
-  </div>
-  <p>Hi ${parentName},</p>
-  <p>Great news! Your appointment for <strong>${childName}</strong> is confirmed.</p>
-  <div style="background-color: #f0fdfa; border-left: 4px solid #0d9488; padding: 14px 18px; margin: 20px 0; border-radius: 4px;">
-    <h3 style="margin-top: 0; color: #0f766e;">Session Details:</h3>
-    <p style="margin: 4px 0;"><strong>Date:</strong> ${formattedDate}</p>
-    <p style="margin: 4px 0;"><strong>Time:</strong> ${timeSlot}</p>
-    <p style="margin: 4px 0;"><strong>Therapist:</strong> ${therapistName}</p>
-    <p style="margin: 4px 0;"><strong>Duration:</strong> 45 minutes</p>
-    <p style="margin: 4px 0;"><strong>Location:</strong> Nurturing Minds Therapy Center, 2nd Floor, Navalur, Chennai</p>
-  </div>
-  <div style="margin: 20px 0;">
-    <h4 style="color: #334155; margin-bottom: 8px;">What to Bring:</h4>
-    <ul>
-      <li>Your child's medical reports (if any)</li>
-      <li>A notebook for notes (optional)</li>
-      <li>Comfortable clothes for your child</li>
-    </ul>
-  </div>
-  <p>Questions? Reply to this email or call +91 98110 23456</p>
-  <p style="margin-top: 24px;">Best regards,<br><strong>Nurturing Minds Team</strong></p>
-</div>`;
-
-      // Send via Resend if configured
-      let sendResult: any = null;
-      let emailStatus = 'sent';
-      let errorDetail = null;
-
-      if (resend) {
-        try {
-          sendResult = await resend.emails.send({
-            from: fromEmail,
-            to: parentEmail,
-            subject: 'Your appointment with Dr Sweety is confirmed',
-            html: emailHtml,
-          });
-          console.log(`[EMAIL SENT] Booking confirmation to ${parentEmail} for session ${sessionId} (${new Date().toLocaleString()})`);
-        } catch (sendErr: any) {
-          console.error(`[EMAIL ERROR] session ${sessionId}: ${sendErr.message}`);
-          emailStatus = 'failed';
-          errorDetail = sendErr.message;
-        }
-      } else {
-        console.warn(`[SIMULATED EMAIL SENT] to ${parentEmail} for session ${sessionId} (No Resend API Key configured)`);
+    let therapistName = 'Dr Sweety Bhatnagar (Clinical Director)';
+    if (session.therapistId) {
+      const therapistSnap = await getDoc(doc(db, 'therapists', session.therapistId));
+      if (therapistSnap.exists()) {
+        therapistName = therapistSnap.data()?.name || therapistName;
       }
+    }
 
-      // Log to emailLogs
-      const logId = `email-${Date.now()}`;
-      await setDoc(doc(db, 'emailLogs', logId), {
-        id: logId,
+    const { subject, html } = generateBookingConfirmationHtml({
+      parentName,
+      childName,
+      scheduledAt: session.scheduledAt || new Date().toISOString(),
+      timeSlot: session.timeSlot || '45-Minute Therapy Slot',
+      therapistName,
+      durationMinutes: session.durationMinutes || 45,
+      branding,
+    });
+
+    const sendResult = await sendEmailWithRetry(
+      resend,
+      { from: fromEmail, to: parentEmail, subject, html },
+      MAX_ATTEMPTS
+    );
+
+    const sentAt = new Date().toISOString();
+
+    await setDoc(bookingLogRef, {
+      id: bookingLogId,
+      sessionId,
+      recipientEmail: parentEmail,
+      recipientName: parentName,
+      childName,
+      therapistName,
+      emailType: 'booking_confirmation',
+      subject,
+      status: sendResult.ok ? 'sent' : 'failed',
+      error: sendResult.ok ? null : sendResult.error || 'Send failed.',
+      sentAt,
+      retryCount: Math.max(0, sendResult.attempts - 1),
+    });
+
+    if (!sendResult.ok) {
+      console.error(`[EMAIL FAILED] booking confirmation for session ${sessionId}: ${sendResult.error}`);
+      return res.status(200).json({
+        success: false,
+        logId: bookingLogId,
+        sessionId,
+        recipientEmail: parentEmail,
+        status: 'failed',
+        error: sendResult.error,
+      });
+    }
+
+    const sessionTime = new Date(session.scheduledAt || Date.now()).getTime();
+    const reminderTime = new Date(sessionTime - 2 * 24 * 60 * 60 * 1000).toISOString();
+    const feedbackTime = new Date(sessionTime + 1 * 24 * 60 * 60 * 1000).toISOString();
+
+    const scheduledRows: Array<{ id: string; emailType: string; scheduledFor: string; subject: string }> = [
+      {
+        id: `scheduled-rem-${sessionId}`,
+        emailType: 'reminder_2days',
+        scheduledFor: reminderTime,
+        subject: 'Reminder: your appointment is in 2 days',
+      },
+      {
+        id: `scheduled-fb-${sessionId}`,
+        emailType: 'feedback_1day',
+        scheduledFor: feedbackTime,
+        subject: "How was your session? We'd love your feedback",
+      },
+    ];
+
+    for (const row of scheduledRows) {
+      if (row.scheduledFor <= sentAt) continue;
+
+      const scheduledRef = doc(db, 'emailLogs', row.id);
+      const scheduledExisting = await getDoc(scheduledRef);
+      if (scheduledExisting.exists() && scheduledExisting.data()?.status === 'sent') continue;
+
+      await setDoc(scheduledRef, {
+        id: row.id,
         sessionId,
         recipientEmail: parentEmail,
         recipientName: parentName,
         childName,
         therapistName,
-        emailType: 'booking_confirmation',
-        sentAt: new Date().toISOString(),
-        status: emailStatus,
-        error: errorDetail,
-      });
-
-      return res.status(200).json({
-        success: emailStatus === 'sent',
-        logId,
-        sessionId,
-        recipientEmail: parentEmail,
-        status: emailStatus,
+        emailType: row.emailType,
+        subject: row.subject,
+        status: 'scheduled',
+        error: null,
+        sentAt: row.scheduledFor,
+        scheduledFor: row.scheduledFor,
+        retryCount: 0,
       });
     }
 
-    return res.status(405).json({ error: 'Method not allowed' });
+    console.log(`[EMAIL SENT] booking confirmation to ${parentEmail} for session ${sessionId}`);
+
+    return res.status(200).json({
+      success: true,
+      logId: bookingLogId,
+      sessionId,
+      recipientEmail: parentEmail,
+      status: 'sent',
+      attempts: sendResult.attempts,
+    });
   } catch (error: any) {
-    console.error('Unhandled webhook error:', error);
-    return res.status(500).json({ error: error.message || 'Internal Server Error' });
+    console.error('[EMAIL ERROR] Unhandled automation failure:', error?.message || error);
+    return res.status(500).json({ success: false, error: 'Email automation failed unexpectedly.' });
   }
 }

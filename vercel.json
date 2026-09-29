@@ -20,7 +20,7 @@
     },
     {
       "path": "/api/cron/check-scheduled-whatsapp",
-      "schedule": "0 * * * *"
+      "schedule": "0 1 * * *"
     }
   ]
 }

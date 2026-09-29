@@ -1,5 +1,6 @@
 import { jsPDF } from 'jspdf';
 import { Invoice, Patient, Therapist } from '../types';
+import { CLINIC_LOCATION } from './automation/email-templates';
 
 let cachedLogoDataUrl: string | null = null;
 
@@ -207,6 +208,8 @@ export async function generateInvoicePDF(
   doc.setFont('helvetica', 'normal');
   doc.text('Pediatric Occupational Therapy Practice • Sensory Integration • Soundsory', 42, 25);
   doc.text('Dr. Sweety Bhatnagar (BOT, MOT Pediatrics) • Clinical Director', 42, 31);
+  doc.setFontSize(8.5);
+  doc.text(CLINIC_LOCATION, 42, 37);
 
   // Document Heading & Receipt Meta
   doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
@@ -462,7 +465,7 @@ export async function generateInvoicePDF(
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
-  doc.text('Nurturing Minds Therapy Center • connect@drsweetybhatnagar.com • +91 98110 23456', 105, 292, {
+  doc.text('Nurturing Minds Therapy Center • connect@drsweetybhatnagar.com • +91 97893 05029', 105, 292, {
     align: 'center',
   });
 

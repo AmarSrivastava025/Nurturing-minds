@@ -1,5 +1,8 @@
 import {
   INITIAL_DOCTOR_PROFILE,
+  migrateClinicAddress,
+  migrateClinicPhone,
+  migrateClinicPhoneInTherapists,
   SEED_EXPENSES,
   SEED_INVITES,
   SEED_INVOICES,
@@ -90,15 +93,10 @@ export interface StoreState {
   cloudError: string | null;
 }
 
-const STORAGE_KEY = 'nurturing_minds_store_v1';
+const STORAGE_KEY = 'nurturing_minds_store_v2';
 
-// Seeded active user defaults to Admin (Dr. Sweety Bhatnagar)
-export const DEFAULT_USER: UserSession = {
-  id: 'user-admin',
-  role: 'admin',
-  name: 'Dr. Sweety Bhatnagar',
-  email: 'connect@drsweetybhatnagar.com',
-};
+// Unauthenticated visitors start with no session and must log in
+export const DEFAULT_USER: UserSession | null = null;
 
 function loadInitialState(): StoreState {
   if (typeof window === 'undefined') {
@@ -144,10 +142,10 @@ function loadInitialState(): StoreState {
       return {
         ...getSeedState(),
         ...parsed,
-        currentUser: parsed.currentUser !== undefined ? parsed.currentUser : DEFAULT_USER,
+        currentUser: parsed.currentUser || null,
         patients,
-        therapists,
-        doctorProfile,
+        therapists: migrateClinicPhoneInTherapists(therapists),
+        doctorProfile: migrateClinicAddress(migrateClinicPhone(doctorProfile)),
         sessions: parsed.sessions || SEED_SESSIONS,
         programs: parsed.programs || SEED_PROGRAMS,
         dailySlotConfigs: parsed.dailySlotConfigs || {},
@@ -202,7 +200,7 @@ function getSeedState(): StoreState {
     doctorProfile: { ...INITIAL_DOCTOR_PROFILE },
     notifications: [...SEED_NOTIFICATIONS],
     invites: [...SEED_INVITES],
-    currentUser: { ...DEFAULT_USER },
+    currentUser: null,
     dailySlotConfigs: {},
     weeklySlotTemplates: [...DEFAULT_WEEKLY_SLOT_TEMPLATES],
     emailLogs: [],
@@ -269,8 +267,18 @@ class Store {
             hasChanges = true;
           }
           if (cloudData.therapists !== undefined) {
-            nextState.therapists = cloudData.therapists;
+            const migratedTherapists = migrateClinicPhoneInTherapists(cloudData.therapists);
+            nextState.therapists = migratedTherapists;
             hasChanges = true;
+            if (migratedTherapists !== cloudData.therapists) {
+              migratedTherapists.forEach((therapist, index) => {
+                if (therapist !== cloudData.therapists[index]) {
+                  cloudSaveTherapist(therapist).catch((err) =>
+                    console.error('Error persisting migrated clinic phone:', err)
+                  );
+                }
+              });
+            }
           }
           if (cloudData.sessions !== undefined) {
             nextState.sessions = cloudData.sessions;
@@ -305,8 +313,14 @@ class Store {
             hasChanges = true;
           }
           if (cloudData.doctorProfile !== undefined) {
-            nextState.doctorProfile = cloudData.doctorProfile;
+            const migratedProfile = migrateClinicAddress(migrateClinicPhone(cloudData.doctorProfile));
+            nextState.doctorProfile = migratedProfile;
             hasChanges = true;
+            if (migratedProfile !== cloudData.doctorProfile) {
+              cloudSaveDoctorProfile(migratedProfile).catch((err) =>
+                console.error('Error persisting migrated clinic phone:', err)
+              );
+            }
           }
           if (cloudData.publishedVideo !== undefined) {
             nextState.publishedVideo = cloudData.publishedVideo;
@@ -394,16 +408,26 @@ class Store {
 
   // --- Patient CRM (Admin Only) ---
   createPatient(patientData: Omit<Patient, 'id' | 'createdAt'>): Patient {
+    const timestamp = Date.now();
+    const parentEmail = patientData.parentEmail ? patientData.parentEmail.trim().toLowerCase() : undefined;
+    const parentLoginId =
+      patientData.parentLoginId ||
+      parentEmail ||
+      (patientData.motherName ? patientData.motherName.toLowerCase().replace(/\s+/g, '.') : `parent.${timestamp}`);
+
     const newPatient: Patient = {
       ...patientData,
-      id: `pat-${Date.now()}`,
+      id: `pat-${timestamp}`,
+      parentEmail,
+      parentLoginId,
+      parentPassword: patientData.parentPassword || 'parent123',
       createdAt: new Date().toISOString(),
     };
     this.state.patients = [newPatient, ...this.state.patients];
 
     // Create an invite link for the parent automatically
     const invite: InviteCode = {
-      id: `inv-${Date.now()}`,
+      id: `inv-${timestamp}`,
       code: `NM-PAT-${newPatient.childName.split(' ')[0].toUpperCase()}-${Math.floor(
         1000 + Math.random() * 9000
       )}`,
@@ -415,12 +439,28 @@ class Store {
     };
     this.state.invites = [invite, ...this.state.invites];
 
+    // Automatically create an initial session for this newly enrolled child
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(16, 0, 0, 0); // 4:00 PM
+
+    const initialSession: Session = {
+      id: `ses-${timestamp}`,
+      patientId: newPatient.id,
+      therapistId: newPatient.assignedTherapistId || 'th-1',
+      scheduledAt: tomorrow.toISOString(),
+      status: 'scheduled',
+      timeSlot: '04:00 PM - 04:45 PM',
+      durationMinutes: 45,
+    };
+    this.state.sessions = [initialSession, ...this.state.sessions];
+
     // Fire in-app notification to assigned therapist immediately
     let notif: Notification | undefined;
     if (newPatient.assignedTherapistId) {
       const therapist = this.state.therapists.find((t) => t.id === newPatient.assignedTherapistId);
       notif = {
-        id: `notif-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        id: `notif-${timestamp}-${Math.random().toString(36).substring(2, 6)}`,
         userId: therapist?.userId || newPatient.assignedTherapistId,
         targetRole: 'therapist',
         type: 'therapist_mapped',
@@ -440,6 +480,9 @@ class Store {
     );
     cloudSaveInvite(invite).catch((err) =>
       console.error('Error saving invite to Firestore:', err)
+    );
+    cloudSaveSession(initialSession, true).catch((err) =>
+      console.error('Error saving initial session to Firestore:', err)
     );
     if (notif) {
       cloudSaveNotification(notif).catch((err) =>
@@ -514,7 +557,21 @@ class Store {
     let updatedPatient: Patient | null = null;
     this.state.patients = this.state.patients.map((p) => {
       if (p.id === id) {
-        updatedPatient = { ...p, ...updates };
+        const nextEmail =
+          updates.parentEmail !== undefined
+            ? updates.parentEmail.trim().toLowerCase()
+            : p.parentEmail;
+        const nextLoginId =
+          updates.parentLoginId ||
+          (nextEmail && (!p.parentLoginId || p.parentLoginId.startsWith('parent.'))
+            ? nextEmail
+            : p.parentLoginId);
+        updatedPatient = {
+          ...p,
+          ...updates,
+          parentEmail: nextEmail,
+          parentLoginId: nextLoginId,
+        };
         return updatedPatient;
       }
       return p;
@@ -1923,7 +1980,7 @@ class Store {
         },
       ],
       invites: [],
-      currentUser: { ...DEFAULT_USER },
+      currentUser: null,
       dailySlotConfigs: {},
       weeklySlotTemplates: [...DEFAULT_WEEKLY_SLOT_TEMPLATES],
       emailLogs: [],

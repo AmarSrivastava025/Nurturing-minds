@@ -21,6 +21,7 @@ import {
   LogOut,
   Mail,
   MessageSquare,
+  Heart,
 } from 'lucide-react';
 import { store } from './services/store';
 import { LoginPage } from './components/Auth/LoginPage';
@@ -118,17 +119,17 @@ export function App() {
   // Pending approval drafts
   const pendingApprovalsCount = progressSummaries.filter((p) => !p.approved).length;
 
-  // Active child for member view
+  // Active child for member view (strictly isolated to authenticated parent - NEVER fallback to another child)
   const currentPatient =
     patients.find((p) => p.id === currentUser.patientId) ||
     patients.find((p) => p.parentUserId === currentUser.id) ||
-    patients[0];
+    (currentUser.email ? patients.find((p) => p.parentEmail?.toLowerCase() === currentUser.email?.toLowerCase()) : undefined);
 
-  // Active therapist for therapist view
+  // Active therapist for therapist view (strictly isolated to authenticated therapist)
   const currentTherapist =
     therapists.find((t) => t.id === currentUser.therapistId) ||
     therapists.find((t) => t.userId === currentUser.id) ||
-    therapists[0];
+    (currentUser.email ? therapists.find((t) => t.email?.toLowerCase() === currentUser.email?.toLowerCase()) : undefined);
 
   const adminNavItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -425,91 +426,66 @@ export function App() {
               <Bell className="w-5 h-5 text-gray-400 hover:text-[#6D0281] transition cursor-pointer" />
             </div>
 
-            {/* OpenRouter Config Key Icon */}
-            <button
-              onClick={() => setShowKeyModal(true)}
-              className="p-1 text-gray-400 hover:text-[#6D0281] transition"
-              title="OpenRouter AI Configuration"
-            >
-              <Key className="w-4 h-4" />
-            </button>
-
-            {/* Quick Role Switcher */}
-            <div className="relative">
+            {/* OpenRouter Config Key Icon - Admin Only */}
+            {currentUser.role === 'admin' && (
               <button
-                onClick={() => setShowRoleMenu(!showRoleMenu)}
-                className="flex items-center space-x-1.5 px-3 py-1.5 bg-purple-50 text-[#6D0281] rounded-lg text-xs font-semibold hover:bg-purple-100 transition border border-purple-100"
+                onClick={() => setShowKeyModal(true)}
+                className="p-1 text-gray-400 hover:text-[#6D0281] transition cursor-pointer"
+                title="OpenRouter AI Configuration"
               >
-                <span className="capitalize">
-                  {currentUser.role === 'admin'
-                    ? 'Dr. Sweety B.'
-                    : currentUser.role === 'parent'
-                    ? 'Priya (Parent)'
-                    : 'Ritu (Therapist)'}
-                </span>
-                <ChevronDown className="w-3 h-3 text-[#6D0281]" />
+                <Key className="w-4 h-4" />
               </button>
+            )}
 
-              {showRoleMenu && (
-                <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50 text-xs">
-                  <div className="px-3 py-1.5 border-b border-gray-100 text-[10px] text-gray-400 uppercase font-bold">
-                    Switch Test View
-                  </div>
+            {/* User Badge - Role switcher only accessible if logged in as Admin */}
+            <div className="relative">
+              {currentUser.role === 'admin' ? (
+                <>
                   <button
-                    onClick={() => handleSwitchRole('admin')}
-                    className={`w-full text-left px-3 py-2 flex items-center justify-between ${
-                      currentUser.role === 'admin' ? 'bg-[#6D0281] text-white font-bold' : 'hover:bg-gray-50'
-                    }`}
+                    onClick={() => setShowRoleMenu(!showRoleMenu)}
+                    className="flex items-center space-x-1.5 px-3 py-1.5 bg-purple-50 text-[#6D0281] rounded-lg text-xs font-semibold hover:bg-purple-100 transition border border-purple-100 cursor-pointer"
                   >
-                    <span>Dr. Sweety Bhatnagar</span>
-                    <span className="text-[10px] opacity-75">Admin</span>
+                    <span>Dr. Sweety B. (Director)</span>
+                    <ChevronDown className="w-3 h-3 text-[#6D0281]" />
                   </button>
-                  <button
-                    onClick={() => handleSwitchRole('parent', 'pat-1')}
-                    className={`w-full text-left px-3 py-2 flex items-center justify-between ${
-                      currentUser.role === 'parent' ? 'bg-[#6D0281] text-white font-bold' : 'hover:bg-gray-50'
-                    }`}
-                  >
-                    <span>Priya Sharma (Parent)</span>
-                    <span className="text-[10px] opacity-75">Member</span>
-                  </button>
-                  {therapists
-                    .filter((t) => t.id !== 'th-3')
-                    .map((th) => (
+
+                  {showRoleMenu && (
+                    <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50 text-xs">
+                      <div className="px-3 py-1.5 border-b border-gray-100 text-[10px] text-gray-400 uppercase font-bold">
+                        Admin Preview Views
+                      </div>
                       <button
-                        key={th.id}
-                        onClick={() => handleSwitchRole('therapist', undefined, th.id)}
-                        className={`w-full text-left px-3 py-2 flex items-center justify-between ${
-                          currentUser.role === 'therapist' && currentUser.therapistId === th.id
-                            ? 'bg-[#6D0281] text-white font-bold'
-                            : 'hover:bg-gray-50'
-                        }`}
+                        onClick={() => handleSwitchRole('admin')}
+                        className="w-full text-left px-3 py-2 flex items-center justify-between bg-[#6D0281] text-white font-bold cursor-pointer"
                       >
-                        <span className="truncate">{th.name}</span>
-                        <span className="text-[10px] opacity-75 shrink-0 ml-1">Therapist</span>
+                        <span>Dr. Sweety Bhatnagar</span>
+                        <span className="text-[10px] opacity-75">Admin</span>
                       </button>
-                    ))}
-                  <div className="border-t border-gray-100 pt-1 mt-1 px-2 space-y-1">
-                    <button
-                      onClick={() => {
-                        setShowRoleMenu(false);
-                        setIsInviteRegOpen(true);
-                      }}
-                      className="w-full text-center py-1.5 text-[#6D0281] font-bold hover:bg-purple-50 rounded"
-                    >
-                      Invite Registration Code Flow
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowRoleMenu(false);
-                        store.logout();
-                      }}
-                      className="w-full text-center py-1.5 text-rose-600 font-bold hover:bg-rose-50 rounded flex items-center justify-center gap-1.5 cursor-pointer"
-                    >
-                      <LogOut className="w-3.5 h-3.5" />
-                      <span>Log Out of Portal</span>
-                    </button>
-                  </div>
+                      <button
+                        onClick={() => handleSwitchRole('parent', 'pat-1')}
+                        className="w-full text-left px-3 py-2 flex items-center justify-between hover:bg-gray-50 cursor-pointer text-slate-700"
+                      >
+                        <span>Preview Parent Portal (Aarav)</span>
+                        <span className="text-[10px] text-purple-600 font-semibold">Preview</span>
+                      </button>
+                      <div className="border-t border-gray-100 pt-1 mt-1 px-2 space-y-1">
+                        <button
+                          onClick={() => {
+                            setShowRoleMenu(false);
+                            store.logout();
+                          }}
+                          className="w-full text-center py-1.5 text-rose-600 font-bold hover:bg-rose-50 rounded flex items-center justify-center gap-1.5 cursor-pointer"
+                        >
+                          <LogOut className="w-3.5 h-3.5" />
+                          <span>Log Out of Practice</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="flex items-center space-x-1.5 px-3 py-1.5 bg-purple-50 text-[#6D0281] rounded-lg text-xs font-semibold border border-purple-100">
+                  <span className="capitalize">{currentUser.name}</span>
                 </div>
               )}
             </div>
@@ -617,26 +593,72 @@ export function App() {
             )}
 
             {currentUser.role === 'parent' && (
-              <MemberView
-                patient={currentPatient}
-                therapists={therapists}
-                sessions={sessions}
-                progressSummaries={progressSummaries}
-                invoices={invoices}
-                programs={programs}
-                publishedVideo={publishedVideo}
-                doctorProfile={doctorProfile}
-              />
+              currentPatient ? (
+                <MemberView
+                  patient={currentPatient}
+                  therapists={therapists.filter((t) => t.id === currentPatient.assignedTherapistId)}
+                  sessions={sessions.filter((s) => s.patientId === currentPatient.id)}
+                  progressSummaries={progressSummaries.filter(
+                    (p) => p.patientId === currentPatient.id && p.approved
+                  )}
+                  invoices={invoices.filter((i) => i.patientId === currentPatient.id)}
+                  programs={programs}
+                  publishedVideo={publishedVideo}
+                  doctorProfile={doctorProfile}
+                />
+              ) : (
+                <div className="bg-white p-8 rounded-3xl border border-slate-200 text-center max-w-lg mx-auto space-y-4 my-8 shadow-xs">
+                  <div className="w-14 h-14 rounded-2xl bg-purple-100 text-[#6D0281] mx-auto flex items-center justify-center">
+                    <Heart className="w-7 h-7 text-[#6D0281]" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900">Patient Profile Linking Required</h3>
+                    <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                      Your family portal account ({currentUser.name}) is authenticated, but is not yet mapped to an active patient record in the system.
+                    </p>
+                  </div>
+                  <div className="p-3.5 bg-purple-50 rounded-2xl border border-purple-100 text-xs text-purple-900 text-left space-y-1">
+                    <p className="font-semibold text-[#6D0281]">How to resolve:</p>
+                    <p className="text-[11px] text-purple-800">
+                      Please contact Dr. Sweety Bhatnagar at reception or call <strong>+91 97893 05029</strong> so the clinic administrator can link your family record or issue an updated invite code.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => store.logout()}
+                    className="px-5 py-2.5 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-xl transition cursor-pointer"
+                  >
+                    Log Out
+                  </button>
+                </div>
+              )
             )}
 
             {currentUser.role === 'therapist' && (
-              <TherapistView
-                therapist={currentTherapist}
-                sessions={sessions}
-                patients={patients}
-                publishedVideo={publishedVideo}
-                doctorProfile={doctorProfile}
-              />
+              currentTherapist ? (
+                <TherapistView
+                  therapist={currentTherapist}
+                  sessions={sessions.filter((s) => s.therapistId === currentTherapist.id)}
+                  patients={patients.filter((p) => p.assignedTherapistId === currentTherapist.id)}
+                  publishedVideo={publishedVideo}
+                  doctorProfile={doctorProfile}
+                />
+              ) : (
+                <div className="bg-white p-8 rounded-3xl border border-slate-200 text-center max-w-lg mx-auto space-y-4 my-8 shadow-xs">
+                  <div className="w-14 h-14 rounded-2xl bg-blue-100 text-blue-700 mx-auto flex items-center justify-center">
+                    <UserCheck className="w-7 h-7 text-blue-700" />
+                  </div>
+                  <h3 className="text-base font-bold text-slate-900">Clinical Profile Not Found</h3>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    No therapist staff profile is matched to this user account ({currentUser.email || currentUser.name}). Please contact Dr. Sweety Bhatnagar to link your staff record.
+                  </p>
+                  <button
+                    onClick={() => store.logout()}
+                    className="px-5 py-2.5 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-xl transition cursor-pointer"
+                  >
+                    Log Out
+                  </button>
+                </div>
+              )
             )}
           </div>
         </main>

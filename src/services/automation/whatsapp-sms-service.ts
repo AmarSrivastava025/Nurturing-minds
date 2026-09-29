@@ -15,8 +15,8 @@ import { MessageLog, Patient, Session, Therapist } from '../../types';
 
 // Clinic configuration constants
 export const CLINIC_NAME = 'Nurturing Minds Therapy Center';
-export const CLINIC_LOCATION = '2nd Floor, Navalur, Chennai (Near OMR Toll Plaza)';
-export const CLINIC_PHONE = '+91 98110 23456';
+export const CLINIC_LOCATION = 'Club Opal, Olympia Opaline, Club House, OMR Road, Navalur, Chennai - 600130';
+export const CLINIC_PHONE = '+91 97893 05029';
 export const CLINIC_DIRECTOR = 'Dr. Sweety Bhatnagar';
 
 /**

@@ -23,10 +23,11 @@ export const CSV_TEMPLATE_HEADERS = [
   'Blood Group',
   'Primary Symptom',
   'Chief Clinical Complaint',
-  'Father Full Name*',
-  'Father Contact Number',
   'Mother Full Name*',
   'Mother Contact Number',
+  'Father Full Name*',
+  'Father Contact Number',
+  'Parent Email Address*',
   'Primary Contact (mother/father)',
   'Emergency Contact (mother/father)',
   'Weekly Sessions Count',
@@ -44,10 +45,11 @@ export const CSV_SAMPLE_ROWS = [
     'B+',
     'Sensory processing sensitivity & fine motor delay',
     'Difficulty holding pencil and emotional dysregulation during noise',
-    'Rajesh Sharma',
-    '+91 98123 45670',
     'Pooja Sharma',
     '+91 98123 45671',
+    'Rajesh Sharma',
+    '+91 98123 45670',
+    'pooja.sharma@example.com',
     'mother',
     'father',
     '3',
@@ -63,10 +65,11 @@ export const CSV_SAMPLE_ROWS = [
     'O+',
     'Vestibular seeking & toe walking',
     'Needs deep pressure sensory input and bilateral coordination work',
-    'Karthik Iyer',
-    '+91 98234 56780',
     'Lakshmi Iyer',
     '+91 98234 56781',
+    'Karthik Iyer',
+    '+91 98234 56780',
+    'lakshmi.iyer@example.com',
     'mother',
     'father',
     '2',
@@ -82,10 +85,11 @@ export const CSV_SAMPLE_ROWS = [
     'A+',
     'Attention deficit & sensory processing difficulty',
     'Struggles with seated tabletop focus and midline crossing',
-    'Siddharth Malhotra',
-    '+91 98345 67890',
     'Rhea Malhotra',
     '+91 98345 67891',
+    'Siddharth Malhotra',
+    '+91 98345 67890',
+    'rhea.malhotra@example.com',
     'mother',
     'mother',
     '3',
@@ -267,6 +271,16 @@ export async function parsePatientSpreadsheet(
       errors.push('At least one parent name (Mother or Father) is required.');
     }
 
+    // Parent Email Address
+    const rawEmail =
+      normalizedRow['parentemailaddress'] ||
+      normalizedRow['parentemail'] ||
+      normalizedRow['emailaddress'] ||
+      normalizedRow['email'] ||
+      normalizedRow['parentmail'] ||
+      '';
+    const parentEmail = rawEmail ? rawEmail.toLowerCase().trim() : undefined;
+
     // Contact designations
     const rawPrimary = (normalizedRow['primarycontact'] || 'mother').toLowerCase();
     const primaryContact: 'father' | 'mother' = rawPrimary.includes('father') ? 'father' : 'mother';
@@ -340,6 +354,8 @@ export async function parsePatientSpreadsheet(
       fatherContact,
       motherName: motherName || 'Parent / Guardian',
       motherContact,
+      parentEmail,
+      parentLoginId: parentEmail,
       primaryContact,
       emergencyContact,
       sessionsPerWeek: Math.min(6, Math.max(1, sessionsPerWeek)),

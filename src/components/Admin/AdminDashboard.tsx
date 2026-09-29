@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Clock,
   Send,
@@ -16,6 +16,7 @@ import {
 import { Invoice, Patient, Session, Therapist } from '../../types';
 import { store } from '../../services/store';
 import { LastMinuteTherapistSwapModal } from './LastMinuteTherapistSwapModal';
+import { fetchEmailServiceStatus } from '../../services/automation/email-confirmation-sequence';
 
 interface AdminDashboardProps {
   invoices: Invoice[];
@@ -44,6 +45,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [quickExpenseText, setQuickExpenseText] = useState('');
   const [isExpenseLogging, setIsExpenseLogging] = useState(false);
   const [expenseSuccessMsg, setExpenseSuccessMsg] = useState('');
+
+  const [emailService, setEmailService] = useState<{
+    online: boolean;
+    resendConfigured: boolean;
+  } | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    fetchEmailServiceStatus().then((status) => {
+      if (isMounted) setEmailService(status);
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Quick video broadcast state
   const [quickVideoUrl, setQuickVideoUrl] = useState('');
@@ -234,8 +250,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 Service 3: Active
               </span>
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span className="text-[11px] bg-white text-teal-700 px-2 py-0.5 rounded-full border border-teal-200 font-medium">
-                Resend API Ready
+              <span
+                className={`text-[11px] px-2 py-0.5 rounded-full border font-medium ${
+                  emailService?.resendConfigured
+                    ? 'bg-white text-teal-700 border-teal-200'
+                    : 'bg-amber-50 text-amber-700 border-amber-200'
+                }`}
+              >
+                {emailService === null
+                  ? 'Checking email service...'
+                  : emailService.resendConfigured
+                  ? 'Resend API Ready'
+                  : 'Resend API Not Configured'}
               </span>
             </div>
             <p className="text-sm font-semibold text-slate-900 mt-0.5">

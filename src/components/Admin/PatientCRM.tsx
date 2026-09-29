@@ -15,6 +15,8 @@ import {
   Download,
   FileSpreadsheet,
   RefreshCw,
+  Mail,
+  Edit3,
 } from 'lucide-react';
 import { Patient, Therapist } from '../../types';
 import { store } from '../../services/store';
@@ -54,6 +56,7 @@ export const PatientCRM: React.FC<PatientCRMProps> = ({ patients, therapists }) 
   const [formBloodGroup, setFormBloodGroup] = useState('B+');
   const [formSymptom, setFormSymptom] = useState('');
   const [formChiefComplaint, setFormChiefComplaint] = useState('');
+  const [formParentEmail, setFormParentEmail] = useState('');
   const [formFatherName, setFormFatherName] = useState('');
   const [formFatherContact, setFormFatherContact] = useState('');
   const [formMotherName, setFormMotherName] = useState('');
@@ -65,12 +68,32 @@ export const PatientCRM: React.FC<PatientCRMProps> = ({ patients, therapists }) 
   const [formSessionTiming, setFormSessionTiming] = useState('Mon, Wed, Fri • 4:00 PM - 5:00 PM');
   const [paymentConfirmedNotice, setPaymentConfirmedNotice] = useState(true);
 
+  // Edit Patient Modal State
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
+  const [editChildName, setEditChildName] = useState('');
+  const [editAge, setEditAge] = useState<number>(5);
+  const [editBloodGroup, setEditBloodGroup] = useState('B+');
+  const [editSymptom, setEditSymptom] = useState('');
+  const [editChiefComplaint, setEditChiefComplaint] = useState('');
+  const [editParentEmail, setEditParentEmail] = useState('');
+  const [editFatherName, setEditFatherName] = useState('');
+  const [editFatherContact, setEditFatherContact] = useState('');
+  const [editMotherName, setEditMotherName] = useState('');
+  const [editMotherContact, setEditMotherContact] = useState('');
+  const [editPrimaryContact, setEditPrimaryContact] = useState<'father' | 'mother'>('mother');
+  const [editEmergencyContact, setEditEmergencyContact] = useState<'father' | 'mother'>('father');
+  const [editSessionsPerWeek, setEditSessionsPerWeek] = useState<number>(3);
+  const [editAssignedTherapist, setEditAssignedTherapist] = useState<string>('th-1');
+  const [editSessionTiming, setEditSessionTiming] = useState('Mon, Wed, Fri • 4:00 PM - 5:00 PM');
+
   // Filter logic
   const filteredPatients = patients.filter((p) => {
     const matchesSearch =
       p.childName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.fatherName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.motherName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (p.parentEmail && p.parentEmail.toLowerCase().includes(searchTerm.toLowerCase())) ||
       p.symptom.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesTherapist = filterTherapist === 'all' || p.assignedTherapistId === filterTherapist;
@@ -86,6 +109,8 @@ export const PatientCRM: React.FC<PatientCRMProps> = ({ patients, therapists }) 
       return;
     }
 
+    const cleanEmail = formParentEmail.trim().toLowerCase();
+
     const newPatient = store.createPatient({
       childName: formChildName.trim(),
       age: Number(formAge),
@@ -96,6 +121,8 @@ export const PatientCRM: React.FC<PatientCRMProps> = ({ patients, therapists }) 
       fatherContact: formFatherContact.trim() || '+91 98765 43210',
       motherName: formMotherName.trim(),
       motherContact: formMotherContact.trim() || '+91 98765 43211',
+      parentEmail: cleanEmail || undefined,
+      parentLoginId: cleanEmail || undefined,
       primaryContact: formPrimaryContact,
       emergencyContact: formEmergencyContact,
       sessionsPerWeek: Number(formSessionsPerWeek),
@@ -106,12 +133,59 @@ export const PatientCRM: React.FC<PatientCRMProps> = ({ patients, therapists }) 
 
     // Reset Form
     setFormChildName('');
+    setFormParentEmail('');
     setFormSymptom('');
     setFormChiefComplaint('');
     setFormFatherName('');
     setFormMotherName('');
     setShowCreateModal(false);
     setSelectedPatient(newPatient);
+  };
+
+  const handleOpenEditModal = (patient: Patient) => {
+    setEditingPatient(patient);
+    setEditChildName(patient.childName);
+    setEditAge(patient.age);
+    setEditBloodGroup(patient.bloodGroup);
+    setEditSymptom(patient.symptom);
+    setEditChiefComplaint(patient.chiefComplaint);
+    setEditParentEmail(patient.parentEmail || '');
+    setEditFatherName(patient.fatherName);
+    setEditFatherContact(patient.fatherContact);
+    setEditMotherName(patient.motherName);
+    setEditMotherContact(patient.motherContact);
+    setEditPrimaryContact(patient.primaryContact);
+    setEditEmergencyContact(patient.emergencyContact);
+    setEditSessionsPerWeek(patient.sessionsPerWeek);
+    setEditAssignedTherapist(patient.assignedTherapistId);
+    setEditSessionTiming(patient.sessionTiming);
+    setShowEditModal(true);
+  };
+
+  const handleSaveEditPatient = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingPatient) return;
+    const cleanEmail = editParentEmail.trim().toLowerCase();
+    store.updatePatient(editingPatient.id, {
+      childName: editChildName.trim(),
+      age: Number(editAge),
+      bloodGroup: editBloodGroup,
+      parentEmail: cleanEmail || undefined,
+      parentLoginId: cleanEmail || editingPatient.parentLoginId,
+      motherName: editMotherName.trim(),
+      motherContact: editMotherContact.trim(),
+      fatherName: editFatherName.trim(),
+      fatherContact: editFatherContact.trim(),
+      primaryContact: editPrimaryContact,
+      emergencyContact: editEmergencyContact,
+      sessionsPerWeek: Number(editSessionsPerWeek),
+      assignedTherapistId: editAssignedTherapist,
+      sessionTiming: editSessionTiming.trim(),
+      symptom: editSymptom.trim(),
+      chiefComplaint: editChiefComplaint.trim(),
+    });
+    setShowEditModal(false);
+    setEditingPatient(null);
   };
 
   const handleSavePaymentFlag = () => {
@@ -319,6 +393,30 @@ export const PatientCRM: React.FC<PatientCRMProps> = ({ patients, therapists }) 
                   </p>
                 </div>
 
+                {/* Parent Email & Automation Readiness */}
+                <div className="flex items-center justify-between text-xs mb-3 bg-purple-50/40 px-2.5 py-1.5 rounded-xl border border-purple-100">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <Mail className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+                    {patient.parentEmail ? (
+                      <span className="font-medium text-slate-800 truncate text-[11px]" title={patient.parentEmail}>
+                        {patient.parentEmail}
+                      </span>
+                    ) : (
+                      <span className="text-amber-700 font-semibold text-[11px] flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" />
+                        No Email Configured
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenEditModal(patient)}
+                    className="text-[11px] font-bold text-[#6D0281] hover:underline ml-2 shrink-0 cursor-pointer"
+                  >
+                    {patient.parentEmail ? 'Edit' : '+ Add Email'}
+                  </button>
+                </div>
+
                 {/* Therapist Mapping Control */}
                 <div className="pt-2.5 border-t border-slate-100 mb-3">
                   <div className="flex items-center justify-between mb-1">
@@ -358,8 +456,17 @@ export const PatientCRM: React.FC<PatientCRMProps> = ({ patients, therapists }) 
                 </div>
               </div>
 
-              {/* Action Buttons: Set Payment Flag, Copy Invite */}
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+              {/* Action Buttons: Edit, Set Payment Flag, Copy Invite */}
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-1.5">
+                <button
+                  onClick={() => handleOpenEditModal(patient)}
+                  className="px-2.5 py-1.5 text-xs font-semibold rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 transition flex items-center gap-1 cursor-pointer"
+                  title="Edit patient particulars and parent email"
+                >
+                  <Edit3 className="w-3 h-3 text-slate-500" />
+                  Edit
+                </button>
+
                 <button
                   onClick={() => {
                     setFlagPatient(patient);
@@ -368,14 +475,14 @@ export const PatientCRM: React.FC<PatientCRMProps> = ({ patients, therapists }) 
                     setFlagMonth(patient.pendingPaymentMonth || 'October 2026');
                     setShowPaymentFlagModal(true);
                   }}
-                  className="px-2.5 py-1.5 text-xs font-semibold rounded-xl border border-slate-200 hover:bg-purple-50 hover:text-[#6D0281] text-slate-700 transition"
+                  className="px-2 py-1.5 text-xs font-semibold rounded-xl border border-slate-200 hover:bg-purple-50 hover:text-[#6D0281] text-slate-700 transition cursor-pointer"
                 >
                   Payment Flag
                 </button>
 
                 <button
                   onClick={() => handleCopyInvite(patient.id)}
-                  className="px-2.5 py-1.5 text-xs font-semibold rounded-xl bg-purple-50 text-[#6D0281] hover:bg-purple-100 transition flex items-center gap-1"
+                  className="px-2.5 py-1.5 text-xs font-semibold rounded-xl bg-purple-50 text-[#6D0281] hover:bg-purple-100 transition flex items-center gap-1 cursor-pointer"
                   title="Copy parent invite link"
                 >
                   {copiedInviteId === patient.id ? (
@@ -608,6 +715,30 @@ export const PatientCRM: React.FC<PatientCRMProps> = ({ patients, therapists }) 
               <div className="p-3 bg-purple-50/60 rounded-xl border border-purple-100 space-y-3">
                 <p className="font-bold text-[#6D0281] text-xs">Parent & Contact Particulars</p>
 
+                {/* Parent Email Address */}
+                <div>
+                  <label className="font-semibold text-slate-700 block mb-1">
+                    Parent / Guardian Email Address *
+                    <span className="ml-1.5 text-[10px] text-teal-700 font-bold bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200">
+                      Required for Email Automation
+                    </span>
+                  </label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                    <input
+                      type="email"
+                      required
+                      value={formParentEmail}
+                      onChange={(e) => setFormParentEmail(e.target.value)}
+                      placeholder="e.g. parent.email@example.com"
+                      className="w-full pl-9 pr-3 py-1.5 border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#6D0281] text-xs"
+                    />
+                  </div>
+                  <p className="text-[10px] text-slate-500 mt-1">
+                    Booking confirmations, 2-day session reminders, and 1-day feedback forms will be sent to this email.
+                  </p>
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="font-medium text-slate-700 block mb-1">Mother&apos;s Full Name *</label>
@@ -745,6 +876,265 @@ export const PatientCRM: React.FC<PatientCRMProps> = ({ patients, therapists }) 
                   className="px-5 py-2 text-xs font-bold text-white bg-[#6D0281] hover:bg-[#570167] disabled:opacity-50 rounded-xl transition shadow-xs cursor-pointer"
                 >
                   Create Patient Record & Issue Invite
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Patient Modal */}
+      {showEditModal && editingPatient && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+          <div className="w-full max-w-2xl bg-white rounded-2xl p-6 shadow-2xl border border-purple-100 my-8 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-purple-100 text-[#6D0281] flex items-center justify-center">
+                  <Edit3 className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">
+                    Edit Particulars: {editingPatient.childName}
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Update parent email for automated confirmations, contact numbers, or therapist assignment.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditingPatient(null);
+                }}
+                className="text-slate-400 hover:text-slate-700 text-lg font-bold cursor-pointer p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditPatient} className="space-y-4 text-xs">
+              {/* Child Info */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="sm:col-span-2">
+                  <label className="font-semibold text-slate-700 block mb-1">Child&apos;s Full Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editChildName}
+                    onChange={(e) => setEditChildName(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#6D0281] focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="font-semibold text-slate-700 block mb-1">Age (Years) *</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="18"
+                    required
+                    value={editAge}
+                    onChange={(e) => setEditAge(Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#6D0281] focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="font-semibold text-slate-700 block mb-1">Blood Group</label>
+                  <select
+                    value={editBloodGroup}
+                    onChange={(e) => setEditBloodGroup(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#6D0281] focus:outline-none bg-white"
+                  >
+                    {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map((bg) => (
+                      <option key={bg} value={bg}>
+                        {bg}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="font-semibold text-slate-700 block mb-1">Sessions Per Week *</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="6"
+                    value={editSessionsPerWeek}
+                    onChange={(e) => setEditSessionsPerWeek(Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#6D0281] focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Symptoms & Chief Complaint */}
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">Symptom Observation</label>
+                <textarea
+                  rows={2}
+                  value={editSymptom}
+                  onChange={(e) => setEditSymptom(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#6D0281] focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">Chief Complaint</label>
+                <textarea
+                  rows={2}
+                  value={editChiefComplaint}
+                  onChange={(e) => setEditChiefComplaint(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#6D0281] focus:outline-none"
+                />
+              </div>
+
+              {/* Parent Details & Email */}
+              <div className="p-3.5 bg-purple-50/70 rounded-xl border border-purple-100 space-y-3">
+                <p className="font-bold text-[#6D0281] text-xs">Parent & Email Particulars</p>
+
+                {/* Parent Email Address */}
+                <div>
+                  <label className="font-semibold text-slate-700 block mb-1">
+                    Parent / Guardian Email Address *
+                    <span className="ml-1.5 text-[10px] text-teal-700 font-bold bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200">
+                      Primary for Email Automation
+                    </span>
+                  </label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 text-teal-600 absolute left-3 top-2.5" />
+                    <input
+                      type="email"
+                      required
+                      value={editParentEmail}
+                      onChange={(e) => setEditParentEmail(e.target.value)}
+                      placeholder="e.g. parent.email@example.com"
+                      className="w-full pl-9 pr-3 py-1.5 border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#6D0281] text-xs"
+                    />
+                  </div>
+                  <p className="text-[10px] text-slate-500 mt-1">
+                    Booking confirmations, 2-day session reminders, and 1-day feedback forms will be dispatched to this email.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-medium text-slate-700 block mb-1">Mother&apos;s Full Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={editMotherName}
+                      onChange={(e) => setEditMotherName(e.target.value)}
+                      className="w-full px-3 py-1.5 border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#6D0281]"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-medium text-slate-700 block mb-1">Mother&apos;s Phone Contact</label>
+                    <input
+                      type="text"
+                      required
+                      value={editMotherContact}
+                      onChange={(e) => setEditMotherContact(e.target.value)}
+                      className="w-full px-3 py-1.5 border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#6D0281]"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-medium text-slate-700 block mb-1">Father&apos;s Full Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={editFatherName}
+                      onChange={(e) => setEditFatherName(e.target.value)}
+                      className="w-full px-3 py-1.5 border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#6D0281]"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-medium text-slate-700 block mb-1">Father&apos;s Phone Contact</label>
+                    <input
+                      type="text"
+                      required
+                      value={editFatherContact}
+                      onChange={(e) => setEditFatherContact(e.target.value)}
+                      className="w-full px-3 py-1.5 border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#6D0281]"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-medium text-slate-700 block mb-1">Which Contact is Primary?</label>
+                    <select
+                      value={editPrimaryContact}
+                      onChange={(e) => setEditPrimaryContact(e.target.value as 'father' | 'mother')}
+                      className="w-full px-3 py-1.5 border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#6D0281]"
+                    >
+                      <option value="mother">Mother</option>
+                      <option value="father">Father</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="font-medium text-slate-700 block mb-1">Which Contact is Emergency?</label>
+                    <select
+                      value={editEmergencyContact}
+                      onChange={(e) => setEditEmergencyContact(e.target.value as 'father' | 'mother')}
+                      className="w-full px-3 py-1.5 border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#6D0281]"
+                    >
+                      <option value="father">Father</option>
+                      <option value="mother">Mother</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Therapist and Timing */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="font-semibold text-slate-700 block mb-1">Assign Therapist</label>
+                  <select
+                    value={editAssignedTherapist}
+                    onChange={(e) => setEditAssignedTherapist(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#6D0281] focus:outline-none bg-white"
+                  >
+                    {therapists.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="font-semibold text-slate-700 block mb-1">Session Timing</label>
+                  <input
+                    type="text"
+                    required
+                    value={editSessionTiming}
+                    onChange={(e) => setEditSessionTiming(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#6D0281] focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingPatient(null);
+                  }}
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 text-xs font-bold text-white bg-[#6D0281] hover:bg-[#570167] rounded-xl transition shadow-xs cursor-pointer"
+                >
+                  Save Changes & Update Email
                 </button>
               </div>
             </form>

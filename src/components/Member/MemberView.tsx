@@ -222,7 +222,7 @@ export const MemberView: React.FC<MemberViewProps> = ({
               <p className="mt-0.5">
                 Parents sit inside the therapy room and watch sessions live.
                 All session times are scheduled personally by Dr. Sweety Bhatnagar.
-                To request any slot adjustment or rescheduling, please call the center directly at <strong>+91 98110 23456</strong>.
+                To request any slot adjustment or rescheduling, please call the center directly at <strong>+91 97893 05029</strong>.
               </p>
             </div>
           </div>
@@ -448,32 +448,42 @@ export const MemberView: React.FC<MemberViewProps> = ({
             </div>
           </div>
 
-          {/* Therapist Profiles */}
+          {/* Assigned Therapist Profile */}
           <div>
             <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-3">
-              Practice Pediatric Occupational Therapists
+              {patient.childName}&apos;s Assigned Pediatric Therapy Care
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {therapists.map((t) => (
-                <div
-                  key={t.id}
-                  className="bg-white p-4 rounded-2xl border border-purple-100/80 shadow-xs flex items-center gap-4"
-                >
-                  <div className="w-16 h-16 rounded-xl overflow-hidden bg-slate-100 shrink-0 border border-purple-200">
-                    <img
-                      src={t.photoUrl}
-                      alt={t.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-900">{t.name}</h4>
-                    <p className="text-[11px] font-medium text-[#6D0281]">{t.qualification}</p>
-                    <p className="text-[11px] text-slate-500 line-clamp-2 mt-1">{t.summary}</p>
-                  </div>
+            {assignedTherapist ? (
+              <div className="bg-white p-5 rounded-2xl border-2 border-purple-100 shadow-xs flex flex-col sm:flex-row items-center sm:items-start gap-4">
+                <div className="w-20 h-20 rounded-2xl overflow-hidden bg-slate-100 shrink-0 border-2 border-[#6D0281]/30 shadow-xs">
+                  <img
+                    src={assignedTherapist.photoUrl}
+                    alt={assignedTherapist.name}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
-              ))}
-            </div>
+                <div className="space-y-1 text-center sm:text-left">
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                    <h4 className="text-sm font-bold text-slate-900">{assignedTherapist.name}</h4>
+                    <span className="text-[10px] font-bold bg-[#6D0281] text-white px-2.5 py-0.5 rounded-full">
+                      Primary Assigned Therapist
+                    </span>
+                  </div>
+                  <p className="text-xs font-medium text-[#6D0281]">{assignedTherapist.qualification}</p>
+                  <p className="text-xs text-slate-600 mt-1 leading-relaxed">{assignedTherapist.summary}</p>
+                  <p className="text-[11px] text-purple-700 font-semibold pt-1">
+                    Specialization: {assignedTherapist.specialization || 'Pediatric Sensory Integration & Motor Development'}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="p-4 bg-purple-50 rounded-2xl border border-purple-100 text-xs text-purple-900">
+                <p className="font-semibold text-[#6D0281]">Direct Supervision</p>
+                <p className="text-[11px] text-purple-800 mt-0.5">
+                  {patient.childName}&apos;s clinical sessions and developmental protocols are directly overseen and administered under Dr. Sweety Bhatnagar.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       )}

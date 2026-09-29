@@ -63,7 +63,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         service: 'Nurturing Minds WhatsApp & SMS Automation Service',
         twilioConfigured,
         webhookConfigured,
-        clinicLocation: '2nd Floor, Navalur, Chennai',
+        clinicLocation: 'Club Opal, Olympia Opaline, Club House, OMR Road, Navalur, Chennai - 600130',
         director: 'Dr. Sweety Bhatnagar',
       });
     }
@@ -143,28 +143,28 @@ Due to clinical scheduling${reason ? ` (${reason})` : ''}, Dr. Sweety Bhatnagar 
 All clinical developmental notes have been thoroughly reviewed.
 Thank you for your understanding!
 Dr. Sweety Bhatnagar & Team
-📞 +91 98110 23456`;
+📞 +91 97893 05029`;
         } else if (type === 'reminder_2h') {
           messageBody = `⏰ *Session Alert: Starting in 2 Hours*
 Dear ${targetName},
 *${childName}*'s 45-minute therapy session with *${therapistName}* is starting soon at *${timeSlot}*.
-📍 Location: 2nd Floor, Navalur, Chennai (Near OMR Toll Plaza).
-Please bring a water bottle. If delayed, message or call us at +91 98110 23456.`;
+📍 Location: Club Opal, Olympia Opaline, Club House, OMR Road, Navalur, Chennai - 600130.
+Please bring a water bottle. If delayed, message or call us at +91 97893 05029.`;
         } else if (type === 'booking_alert') {
           messageBody = `✅ *Session Confirmed — Nurturing Minds*
 Dear ${targetName},
 Appointment confirmed for *${childName}* with *${therapistName}* at *${timeSlot}*.
-📍 Location: 2nd Floor, Navalur, Chennai.
+📍 Location: Club Opal, Olympia Opaline, Club House, OMR Road, Navalur, Chennai - 600130.
 We look forward to supporting ${childName}! 🌸`;
         } else {
           // Default: reminder_24h
           messageBody = `🌟 *Nurturing Minds Therapy Center*
 Dear ${targetName},
 Friendly reminder that *${childName}*'s session with *${therapistName}* is scheduled for tomorrow at *${timeSlot}* (45 mins strictly).
-📍 Location: 2nd Floor, Navalur, Chennai.
+📍 Location: Club Opal, Olympia Opaline, Club House, OMR Road, Navalur, Chennai - 600130.
 Please arrive 5 minutes early.
 Dr. Sweety Bhatnagar & Team
-📞 Helpline: +91 98110 23456`;
+📞 Helpline: +91 97893 05029`;
         }
       }
 

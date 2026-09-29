@@ -1,19 +1,61 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow access to all documents
-    match /{document=**} {
-      allow read, write: if true;
+
+    match /patients/{document=**} {
+      allow read, create, update, delete: if true;
     }
 
-    // Dedicated rule for emailLogs collection (automated email events & tracking)
+    match /therapists/{document=**} {
+      allow read, create, update, delete: if true;
+    }
+
+    match /sessions/{document=**} {
+      allow read, create, update, delete: if true;
+    }
+
+    match /progressSummaries/{document=**} {
+      allow read, create, update, delete: if true;
+    }
+
+    match /invoices/{document=**} {
+      allow read, create, update, delete: if true;
+    }
+
+    match /expenses/{document=**} {
+      allow read, create, update, delete: if true;
+    }
+
+    match /programs/{document=**} {
+      allow read, create, update, delete: if true;
+    }
+
+    match /invites/{document=**} {
+      allow read, create, update, delete: if true;
+    }
+
+    match /notifications/{document=**} {
+      allow read, create, update, delete: if true;
+    }
+
+    match /dailySlotConfigs/{document=**} {
+      allow read, create, update, delete: if true;
+    }
+
+    match /clinicSettings/{document=**} {
+      allow read, create, update, delete: if true;
+    }
+
     match /emailLogs/{document=**} {
-      allow read, create, write, update: if true;
+      allow read, create, update, delete: if true;
     }
 
-    // Dedicated rule for messageLogs collection (automated WhatsApp & SMS alerts)
     match /messageLogs/{document=**} {
-      allow read, create, write, update: if true;
+      allow read, create, update, delete: if true;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

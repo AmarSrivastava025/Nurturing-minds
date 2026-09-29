@@ -22,12 +22,53 @@ export const INITIAL_DOCTOR_PROFILE: DoctorProfile = {
   photoUrl: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=600',
   qualifications: 'BOT, MOT (Pediatrics), Certified Sensory Integration Therapist (USC/WPS), 16+ Years Clinical Excellence',
   bio: 'Dr. Sweety Bhatnagar personally conducts every 90-minute clinical assessment for newly enrolled children to formulate a customized developmental roadmap. Nurturing Minds Therapy Center embraces an open, in-center parent partnership where parents observe sessions live, empowering families to reinforce developmental milestones with confidence.',
-  clinicAddress: 'Nurturing Minds Therapy Center, 2nd Floor, Sunshine Complex, Model Town, New Delhi, India',
+  clinicAddress: 'Nurturing Minds Therapy Center, Club Opal, Olympia Opaline, Club House, OMR Road, Navalur, Chennai - 600130',
   contactEmail: 'connect@drsweetybhatnagar.com',
-  phone: '+91 98110 23456',
+  phone: '+91 97893 05029',
   adminLoginId: 'connect@drsweetybhatnagar.com',
   adminPassword: 'admin123',
 };
+
+export const LEGACY_CLINIC_PHONE = '+91 98110 23456';
+
+export function migrateClinicPhone(profile: DoctorProfile): DoctorProfile {
+  if (profile && typeof profile.phone === 'string' && profile.phone.trim() === LEGACY_CLINIC_PHONE) {
+    return { ...profile, phone: INITIAL_DOCTOR_PROFILE.phone };
+  }
+  return profile;
+}
+
+export function migrateClinicPhoneInTherapists(therapists: Therapist[]): Therapist[] {
+  let changed = false;
+  const next = therapists.map((therapist) => {
+    if (
+      therapist &&
+      typeof therapist.phone === 'string' &&
+      therapist.phone.trim() === LEGACY_CLINIC_PHONE
+    ) {
+      changed = true;
+      return { ...therapist, phone: INITIAL_DOCTOR_PROFILE.phone };
+    }
+    return therapist;
+  });
+  return changed ? next : therapists;
+}
+
+export const LEGACY_CLINIC_ADDRESS_MARKERS = [
+  'Model Town',
+  'Sunshine Complex',
+  'New Delhi',
+  '2nd Floor',
+];
+
+export function migrateClinicAddress<T extends { clinicAddress?: string }>(profile: T): T {
+  if (!profile || typeof profile.clinicAddress !== 'string') return profile;
+  const current = profile.clinicAddress;
+  if (!LEGACY_CLINIC_ADDRESS_MARKERS.some((marker) => current.includes(marker))) return profile;
+  const next = INITIAL_DOCTOR_PROFILE.clinicAddress;
+  if (next === current) return profile;
+  return { ...profile, clinicAddress: next };
+}
 
 export const SEED_THERAPISTS: Therapist[] = [
   {
@@ -72,7 +113,7 @@ export const SEED_THERAPISTS: Therapist[] = [
     qualification: 'Director & Lead Consultant (BOT, MOT, SI Certified)',
     summary: 'Directly handles complex neurodevelopmental assessments, proprietary intensive therapy plans, and sound-based therapies.',
     email: 'connect@drsweetybhatnagar.com',
-    phone: '+91 98110 23456',
+    phone: '+91 97893 05029',
     loginId: 'connect@drsweetybhatnagar.com',
     password: 'admin123',
     specialization: 'Comprehensive Clinical Assessments & Advanced Sensory Processing',

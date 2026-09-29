@@ -427,6 +427,9 @@ export const BatchPatientUploadModal: React.FC<BatchPatientUploadModalProps> = (
                                 <td className="py-2 px-3 text-slate-600">
                                   <p>{row.data.motherName} / {row.data.fatherName}</p>
                                   <p className="text-[10px] text-slate-400">{row.data.motherContact || row.data.fatherContact}</p>
+                                  {row.data.parentEmail && (
+                                    <p className="text-[10px] text-teal-700 font-mono truncate">{row.data.parentEmail}</p>
+                                  )}
                                 </td>
                                 <td className="py-2 px-3">
                                   <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#6D0281] bg-purple-50 px-2 py-0.5 rounded-md">
