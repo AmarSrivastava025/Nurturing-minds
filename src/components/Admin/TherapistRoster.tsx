@@ -303,6 +303,11 @@ export const TherapistRoster: React.FC<TherapistRosterProps> = ({ sessions, pati
                               </div>
                             ) : (
                               <div className="space-y-1">
+                                {cellSessions.length > 1 && (
+                                  <div className="text-[9px] font-bold uppercase tracking-wide text-amber-700 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5 text-center">
+                                    Group · {cellSessions.length}
+                                  </div>
+                                )}
                                 {cellSessions.map((session) => {
                                   const patient = patients.find((p) => p.id === session.patientId);
                                   return (
