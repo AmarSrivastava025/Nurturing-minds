@@ -215,18 +215,6 @@ export const SchedulingManager: React.FC<SchedulingManagerProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="inline-flex p-1 bg-white border border-purple-100/90 rounded-2xl shadow-2xs">
           <button
-            onClick={() => setViewMode('planner')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
-              viewMode === 'planner'
-                ? 'bg-[#6D0281] text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-purple-50/50'
-            }`}
-          >
-            <Calendar className="w-4 h-4" />
-            Daily 45-Min Slot Planner
-          </button>
-
-          <button
             onClick={() => setViewMode('table')}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
               viewMode === 'table'
@@ -258,19 +246,7 @@ export const SchedulingManager: React.FC<SchedulingManagerProps> = ({
         </div>
       </div>
 
-      {/* VIEW 1: Daily Slot Planner (Primary View) */}
-      {viewMode === 'planner' && (
-        <DailySlotPlanner
-          selectedDate={selectedDate}
-          onDateChange={setSelectedDate}
-          sessions={sessions}
-          patients={patients}
-          therapists={therapists}
-          onOpenScheduleModal={handleOpenScheduleModal}
-          onOpenEditSession={handleOpenEditSession}
-          onOpenWeeklyConfig={() => setShowWeeklyConfigModal(true)}
-        />
-      )}
+      {/* Planning now lives in the Therapist Roster tab */}
 
       {/* VIEW 2: Master Sessions List Table */}
       {viewMode === 'table' && (
