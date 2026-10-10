@@ -140,6 +140,7 @@ export function listenToSessionsAndSendEmailSequences(): () => void {
         const session = change.doc.data() as Session;
         const sessionId = change.doc.id || session.id;
         if (!sessionId || processedSessionIds.has(sessionId)) return;
+        if (session.notifyParent === false) return;
 
         processedSessionIds.add(sessionId);
         processSessionEmailSequence(sessionId, session).catch((err) =>

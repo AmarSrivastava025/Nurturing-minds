@@ -4,6 +4,7 @@ import {
   Users,
   UserCheck,
   Calendar,
+  CalendarRange,
   Sparkles,
   IndianRupee,
   FileSpreadsheet,
@@ -36,6 +37,7 @@ import { AdminDashboard } from './components/Admin/AdminDashboard';
 import { PatientCRM } from './components/Admin/PatientCRM';
 import { TherapistManager } from './components/Admin/TherapistManager';
 import { SchedulingManager } from './components/Admin/SchedulingManager';
+import { TherapistRoster } from './components/Admin/TherapistRoster';
 import { ProgressApprovalQueue } from './components/Admin/ProgressApprovalQueue';
 import { ExpenseLogger } from './components/Admin/ExpenseLogger';
 import { MonthlyPnL } from './components/Admin/MonthlyPnL';
@@ -140,7 +142,8 @@ export function App() {
       icon: UserCheck,
       badge: String(therapists.length),
     },
-    { id: 'scheduling', label: 'Scheduling', icon: Calendar },
+      { id: 'scheduling', label: 'Scheduling', icon: Calendar },
+      { id: 'roster', label: 'Therapist Roster', icon: CalendarRange },
     {
       id: 'email_sequence',
       label: 'Email Automation',
@@ -531,13 +534,20 @@ export function App() {
                     onNavigateToPatientCRM={() => setAdminTab('crm')}
                   />
                 )}
-                {adminTab === 'scheduling' && (
-                  <SchedulingManager
-                    sessions={sessions}
-                    patients={patients}
-                    therapists={therapists}
-                  />
-                )}
+                  {adminTab === 'scheduling' && (
+                    <SchedulingManager
+                      sessions={sessions}
+                      patients={patients}
+                      therapists={therapists}
+                    />
+                  )}
+                  {adminTab === 'roster' && (
+                    <TherapistRoster
+                      sessions={sessions}
+                      patients={patients}
+                      therapists={therapists}
+                    />
+                  )}
                 {adminTab === 'approval_queue' && (
                   <ProgressApprovalQueue
                     progressSummaries={progressSummaries}

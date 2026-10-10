@@ -44,6 +44,22 @@ export interface Therapist {
   status?: 'active' | 'on_leave';
   availableDays?: string[];
   workingHours?: string;
+  workingBlocks?: WorkingBlock[];
+}
+
+export type WeekDay =
+  | 'Monday'
+  | 'Tuesday'
+  | 'Wednesday'
+  | 'Thursday'
+  | 'Friday'
+  | 'Saturday'
+  | 'Sunday';
+
+export interface WorkingBlock {
+  day: WeekDay;
+  startTime: string;
+  endTime: string;
 }
 
 export interface ClinicSlot {
@@ -79,6 +95,7 @@ export interface Session {
   progressNote?: string; // 1-3 word therapist entry
   durationMinutes?: number;
   timeSlot?: string;
+  notifyParent?: boolean;
   isSubstitute?: boolean;
   originalTherapistId?: string;
   substituteReason?: string;

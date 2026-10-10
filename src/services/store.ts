@@ -3,6 +3,7 @@ import {
   migrateClinicAddress,
   migrateClinicPhone,
   migrateClinicPhoneInTherapists,
+  migrateTherapistsToRealRoster,
   SEED_EXPENSES,
   SEED_INVITES,
   SEED_INVOICES,
@@ -144,7 +145,7 @@ function loadInitialState(): StoreState {
         ...parsed,
         currentUser: parsed.currentUser || null,
         patients,
-        therapists: migrateClinicPhoneInTherapists(therapists),
+        therapists: migrateTherapistsToRealRoster(migrateClinicPhoneInTherapists(therapists)),
         doctorProfile: migrateClinicAddress(migrateClinicPhone(doctorProfile)),
         sessions: parsed.sessions || SEED_SESSIONS,
         programs: parsed.programs || SEED_PROGRAMS,
@@ -267,7 +268,9 @@ class Store {
             hasChanges = true;
           }
           if (cloudData.therapists !== undefined) {
-            const migratedTherapists = migrateClinicPhoneInTherapists(cloudData.therapists);
+            const migratedTherapists = migrateTherapistsToRealRoster(
+              migrateClinicPhoneInTherapists(cloudData.therapists)
+            );
             nextState.therapists = migratedTherapists;
             hasChanges = true;
             if (migratedTherapists !== cloudData.therapists) {

@@ -446,7 +446,7 @@ export async function cloudSaveSession(session: Session, isNewBooking = false): 
   await setDoc(ref, sanitizeForFirestore(session), { merge: true });
 
   // If newly booked or scheduled, trigger email sequence immediately
-  if (isNewBooking || session.status === 'scheduled') {
+  if ((isNewBooking || session.status === 'scheduled') && session.notifyParent !== false) {
     processSessionEmailSequence(session.id, session).catch((err) => {
       console.warn('[AUTOMATION] Error triggering email sequence for session:', err);
     });

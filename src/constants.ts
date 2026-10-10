@@ -1,4 +1,5 @@
 import { DoctorProfile, Expense, Invoice, InviteCode, Notification, Patient, Program, ProgressSummary, PublishedVideo, Session, Therapist } from './types';
+import { defaultWorkingBlocks } from './utils/rosterUtils';
 
 export const BRAND = {
   primary: '#6D0281', // deep plum-purple confirmed from client swatch
@@ -68,6 +69,88 @@ export function migrateClinicAddress<T extends { clinicAddress?: string }>(profi
   const next = INITIAL_DOCTOR_PROFILE.clinicAddress;
   if (next === current) return profile;
   return { ...profile, clinicAddress: next };
+}
+
+export const REAL_CLINIC_ROSTER: Array<{
+  id: string;
+  name: string;
+  isLead: boolean;
+  email: string;
+  qualification: string;
+}> = [
+  {
+    id: 'th-1',
+    name: 'Jothika',
+    isLead: false,
+    email: 'jothika@nurturingminds.com',
+    qualification: 'Pediatric Occupational Therapist',
+  },
+  {
+    id: 'th-2',
+    name: 'Hari',
+    isLead: false,
+    email: 'hari@nurturingminds.com',
+    qualification: 'Pediatric Occupational Therapist',
+  },
+  {
+    id: 'th-3',
+    name: 'Dr. Sweety Bhatnagar',
+    isLead: true,
+    email: 'connect@drsweetybhatnagar.com',
+    qualification: 'Director & Lead Consultant (BOT, MOT, SI Certified)',
+  },
+  {
+    id: 'th-4',
+    name: 'Nayima',
+    isLead: false,
+    email: 'nayima@nurturingminds.com',
+    qualification: 'Pediatric Occupational Therapist',
+  },
+];
+
+export function migrateTherapistsToRealRoster(therapists: Therapist[]): Therapist[] {
+  let changed = false;
+  const result: Therapist[] = therapists.map((t) => t);
+
+  for (const spec of REAL_CLINIC_ROSTER) {
+    const blocks = defaultWorkingBlocks(spec.isLead);
+    const index = result.findIndex((t) => t.id === spec.id);
+
+    if (index === -1) {
+      result.push({
+        id: spec.id,
+        userId: `user-${spec.id}`,
+        name: spec.name,
+        photoUrl: '',
+        qualification: spec.qualification,
+        summary: 'Pediatric occupational therapist at Nurturing Minds Therapy Center.',
+        email: spec.email,
+        loginId: spec.email,
+        password: 'therapist123',
+        status: 'active',
+        workingBlocks: blocks,
+      });
+      changed = true;
+      continue;
+    }
+
+    const existing = result[index];
+    const nameChanged = existing.name !== spec.name;
+    const blocksChanged =
+      JSON.stringify(existing.workingBlocks || null) !== JSON.stringify(blocks);
+
+    if (nameChanged || blocksChanged) {
+      result[index] = {
+        ...existing,
+        name: spec.name,
+        qualification: existing.qualification || spec.qualification,
+        workingBlocks: blocks,
+      };
+      changed = true;
+    }
+  }
+
+  return changed ? result : therapists;
 }
 
 export const SEED_THERAPISTS: Therapist[] = [
