@@ -220,7 +220,7 @@ export interface MessageLog {
   childName: string;
   therapistName?: string;
   channel: 'whatsapp' | 'sms';
-  messageType: 'reminder_24h' | 'reminder_2h' | 'therapist_swap' | 'booking_alert';
+    messageType: 'reminder_24h' | 'reminder_2h' | 'therapist_swap' | 'booking_alert' | 'parent_invite';
   sentAt: string; // ISO timestamp
   status: 'sent' | 'failed' | 'scheduled';
   error?: string | null;

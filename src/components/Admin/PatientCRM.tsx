@@ -17,9 +17,15 @@ import {
   RefreshCw,
   Mail,
   Edit3,
+  Send,
 } from 'lucide-react';
 import { Patient, Therapist } from '../../types';
 import { store } from '../../services/store';
+import {
+  createWhatsAppDirectUrl,
+  generateParentInviteText,
+  cloudSaveMessageLog,
+} from '../../services/automation/whatsapp-sms-service';
 import { BatchPatientUploadModal } from './BatchPatientUploadModal';
 import { LastMinuteTherapistSwapModal } from './LastMinuteTherapistSwapModal';
 import { downloadPatientCsvTemplate } from '../../utils/csvPatientUtils';
@@ -211,6 +217,40 @@ export const PatientCRM: React.FC<PatientCRMProps> = ({ patients, therapists }) 
       setCopiedInviteId(patientId);
       setTimeout(() => setCopiedInviteId(null), 2000);
     }
+  };
+
+  const handleSendInviteWhatsApp = (patient: Patient) => {
+    const invites = store.getState().invites || [];
+    const invite = invites.find((i) => i.patientId === patient.id);
+    if (!invite) return;
+
+    const useFather = patient.primaryContact === 'father';
+    const phone = useFather
+      ? patient.fatherContact || patient.motherContact
+      : patient.motherContact || patient.fatherContact;
+    const parentName = (useFather ? patient.fatherName : patient.motherName) || 'Parent';
+
+    const body = generateParentInviteText({
+      parentName,
+      childName: patient.childName,
+      inviteCode: invite.code,
+    });
+
+    window.open(createWhatsAppDirectUrl(phone, body), '_blank');
+
+    cloudSaveMessageLog({
+      id: `msg-invite-${patient.id}-${Date.now()}`,
+      sessionId: `invite-${patient.id}`,
+      recipientPhone: phone,
+      recipientName: parentName,
+      childName: patient.childName,
+      channel: 'whatsapp',
+      messageType: 'parent_invite',
+      sentAt: new Date().toISOString(),
+      status: 'sent',
+      body,
+      retryCount: 0,
+    }).catch((err) => console.error('Error logging invite message:', err));
   };
 
   return (
@@ -496,6 +536,15 @@ export const PatientCRM: React.FC<PatientCRMProps> = ({ patients, therapists }) 
                       Parent Invite
                     </>
                   )}
+                </button>
+
+                <button
+                  onClick={() => handleSendInviteWhatsApp(patient)}
+                  className="px-2.5 py-1.5 text-xs font-semibold rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition flex items-center gap-1 cursor-pointer"
+                  title="Open WhatsApp with the welcome message and invite code"
+                >
+                  <Send className="w-3 h-3" />
+                  Send Invite
                 </button>
               </div>
             </div>

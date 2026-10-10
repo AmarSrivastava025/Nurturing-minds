@@ -167,6 +167,37 @@ Dr. Sweety Bhatnagar & Team`;
 }
 
 /**
+ * Welcome / parent invite message carrying the portal invite code.
+ * This is the FIRST message a family receives.
+ */
+export function generateParentInviteText(params: {
+  parentName: string;
+  childName: string;
+  inviteCode: string;
+  appUrl?: string;
+}): string {
+  const appUrl = params.appUrl || 'https://clinic.drsweetybhatnagar.com';
+  return `🌟 *${CLINIC_NAME}* — Parent Portal Welcome
+
+Dear ${params.parentName},
+
+Thank you for choosing us for *${params.childName}*. We have launched a parent portal where you can follow ${params.childName}'s therapy journey — session updates, progress summaries, invoices and reminders.
+
+*Your Invite Code:* ${params.inviteCode}
+
+How to register (2 minutes):
+1. Open ${appUrl}
+2. Tap "Invite Registration"
+3. Enter the invite code above, then your name and email
+4. Set your own password
+
+Please keep this code private — it links you to ${params.childName}'s records. If you need help, call or message us at ${CLINIC_PHONE}.
+
+Warm regards,
+${CLINIC_DIRECTOR} & Team`;
+}
+
+/**
  * Generate 1-Click WhatsApp Direct URL
  * Allows front desk / Dr. Sweety to launch WhatsApp web or mobile with pre-filled message
  */
