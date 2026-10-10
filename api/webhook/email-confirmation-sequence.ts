@@ -37,6 +37,7 @@ const CLINIC_EMAIL = 'connect@drsweetybhatnagar.com';
 const CLINIC_LOCATION = 'Club Opal, Olympia Opaline, Club House, OMR Road, Navalur, Chennai - 600130';
 const DEFAULT_APP_URL = 'https://clinic.drsweetybhatnagar.com';
 const MAX_ATTEMPTS = 3;
+const FEEDBACK_EMAILS_ENABLED = false;
 
 function getDbInstance() {
   const app = !getApps().length ? initializeApp(FIREBASE_CONFIG) : getApp();
@@ -343,6 +344,14 @@ async function processScheduledEmails(
         appUrl,
       });
     } else if (log.emailType === 'feedback_1day') {
+      if (!FEEDBACK_EMAILS_ENABLED) {
+        await updateDoc(logRef, {
+          status: 'failed',
+          error: 'Disabled: clinic requested no post-session feedback emails.',
+          sentAt: nowIso,
+        });
+        continue;
+      }
       generated = feedbackEmail({ parentName, childName, appUrl, googleFormUrl: feedbackFormUrl });
     } else {
       result.failedCount++;
@@ -584,13 +593,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         scheduledFor: new Date(sessionTime - 2 * 24 * 60 * 60 * 1000).toISOString(),
         subject: 'Reminder: your appointment is in 2 days',
       },
-      {
+    ];
+
+    if (FEEDBACK_EMAILS_ENABLED) {
+      scheduledRows.push({
         id: `scheduled-fb-${sessionId}`,
         emailType: 'feedback_1day',
         scheduledFor: new Date(sessionTime + 1 * 24 * 60 * 60 * 1000).toISOString(),
         subject: "How was your session? We'd love your feedback",
-      },
-    ];
+      });
+    }
 
     for (const row of scheduledRows) {
       if (row.scheduledFor <= sentAt) continue;
