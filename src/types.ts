@@ -203,7 +203,7 @@ export interface EmailLog {
   recipientName?: string;
   childName?: string;
   therapistName?: string;
-  emailType: 'booking_confirmation' | 'reminder_2days' | 'feedback_1day';
+  emailType: 'booking_confirmation' | 'reminder_2days' | 'feedback_1day' | 'welcome';
   sentAt: string; // ISO timestamp
   status: 'sent' | 'failed' | 'scheduled';
   error?: string | null;

@@ -26,6 +26,7 @@ import {
   generateParentInviteText,
   cloudSaveMessageLog,
 } from '../../services/automation/whatsapp-sms-service';
+import { sendWelcomeEmail } from '../../services/automation/email-confirmation-sequence';
 import { BatchPatientUploadModal } from './BatchPatientUploadModal';
 import { LastMinuteTherapistSwapModal } from './LastMinuteTherapistSwapModal';
 import { downloadPatientCsvTemplate } from '../../utils/csvPatientUtils';
@@ -42,6 +43,11 @@ export const PatientCRM: React.FC<PatientCRMProps> = ({ patients, therapists }) 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showBatchUploadModal, setShowBatchUploadModal] = useState(false);
   const [batchSuccessMsg, setBatchSuccessMsg] = useState<string | null>(null);
+  const [welcomeFeedback, setWelcomeFeedback] = useState<{
+    id: string;
+    text: string;
+    error?: boolean;
+  } | null>(null);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [swapPatient, setSwapPatient] = useState<Patient | null>(null);
   const [showSwapModal, setShowSwapModal] = useState(false);
@@ -251,6 +257,12 @@ export const PatientCRM: React.FC<PatientCRMProps> = ({ patients, therapists }) 
       body,
       retryCount: 0,
     }).catch((err) => console.error('Error logging invite message:', err));
+  };
+
+  const handleSendWelcomeEmail = async (patient: Patient) => {
+    const result = await sendWelcomeEmail(patient.id);
+    setWelcomeFeedback({ id: patient.id, text: result.message, error: !result.success });
+    setTimeout(() => setWelcomeFeedback(null), 6000);
   };
 
   return (
@@ -546,7 +558,26 @@ export const PatientCRM: React.FC<PatientCRMProps> = ({ patients, therapists }) 
                   <Send className="w-3 h-3" />
                   Send Invite
                 </button>
+
+                <button
+                  onClick={() => handleSendWelcomeEmail(patient)}
+                  className="px-2.5 py-1.5 text-xs font-semibold rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition flex items-center gap-1 cursor-pointer"
+                  title="Email the welcome message and invite code to the parent"
+                >
+                  <Mail className="w-3 h-3" />
+                  Welcome Email
+                </button>
               </div>
+
+              {welcomeFeedback?.id === patient.id && (
+                <p
+                  className={`text-[10px] mt-1 ${
+                    welcomeFeedback.error ? 'text-rose-600' : 'text-emerald-600'
+                  }`}
+                >
+                  {welcomeFeedback.text}
+                </p>
+              )}
             </div>
           );
         })}

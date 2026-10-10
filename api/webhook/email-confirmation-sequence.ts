@@ -185,6 +185,51 @@ function bulletList(title: string, items: string[]): string {
   </div>`;
 }
 
+function welcomeEmail(params: {
+  parentName: string;
+  childName: string;
+  inviteCode: string;
+  appUrl?: string;
+}): { subject: string; html: string } {
+  const baseUrl = params.appUrl || DEFAULT_APP_URL;
+
+  const accessCard = detailCard(
+    'Your Portal Access',
+    detailRow('Invite Code', params.inviteCode || 'issued by the clinic') +
+      detailRow('Login ID', 'The email address you register with', true)
+  );
+
+  const steps = `<div style="background:#ffffff;border:1px solid #ece3f0;border-radius:10px;padding:18px 20px;margin:22px 0;">
+    <div style="color:#1a202c;font-size:14px;font-weight:700;margin-bottom:8px;">How to register (2 minutes)</div>
+    <ol style="margin:0;padding-left:20px;color:#4a5568;font-size:14px;">
+      <li style="margin-bottom:6px;">Open <a href="${baseUrl}" style="color:${BRAND_PRIMARY};font-weight:600;">${baseUrl}</a></li>
+      <li style="margin-bottom:6px;">Tap <strong>Invite Registration</strong></li>
+      <li style="margin-bottom:6px;">Enter the invite code above, then your name and email</li>
+      <li>Set your own password</li>
+    </ol>
+  </div>`;
+
+  return {
+    subject: 'Welcome to Nurturing Minds - your parent portal access',
+    html: renderShell({
+      preheader: `Your parent portal invite code for ${params.childName}.`,
+      heading: 'Welcome to the parent portal',
+      intro: `Hi <strong>${params.parentName}</strong>, thank you for choosing ${CLINIC_NAME} for <strong>${params.childName}</strong>.`,
+      body: `${accessCard}
+${steps}
+${bulletList('What you can do in the portal', [
+        "See your child's session schedule and updates",
+        'Read approved progress summaries',
+        'View invoices and payment status',
+        'Receive appointment reminders',
+      ])}
+<p style="margin:22px 0 0 0;font-size:14px;color:#4a5568;">Please keep your invite code private - it links you to ${params.childName}'s records. If you need help, reply to this email or call us at <strong style="color:${BRAND_PRIMARY};">${CLINIC_PHONE}</strong>.</p>
+<p style="margin:22px 0 0 0;font-size:14px;color:#4a5568;">Warm regards,<br><strong style="color:${BRAND_PRIMARY};">Nurturing Minds Team</strong></p>`,
+      appUrl: baseUrl,
+    }),
+  };
+}
+
 function bookingEmail(params: {
   parentName: string;
   childName: string;
@@ -443,6 +488,72 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (body.action === 'process_scheduled') {
       const runResult = await processScheduledEmails(db, resend, fromEmail, appUrl, feedbackFormUrl);
       return res.status(200).json({ success: true, ...runResult });
+    }
+
+    if (body.action === 'welcome') {
+      const patientId = String(body.patientId || '').trim();
+      if (!patientId) {
+        return res.status(400).json({ error: 'patientId is required in the request body.' });
+      }
+
+      const patientSnap = await getDoc(doc(db, 'patients', patientId));
+      if (!patientSnap.exists()) {
+        return res.status(404).json({ error: `Patient ${patientId} was not found.` });
+      }
+      const patient: any = patientSnap.data();
+      const childName = patient.childName || 'your child';
+      const parentName = patient.motherName || patient.fatherName || 'Parent';
+      const parentEmail = String(patient.parentEmail || '').trim().toLowerCase();
+
+      if (!parentEmail || !parentEmail.includes('@')) {
+        const msg = `Parent email is missing or invalid for ${childName}. Add an email to the patient record first.`;
+        return res.status(200).json({ success: false, error: msg });
+      }
+
+      const invitesSnap = await getDocs(
+        query(collection(db, 'invites'), where('patientId', '==', patientId))
+      );
+      const inviteCode = invitesSnap.empty
+        ? ''
+        : String((invitesSnap.docs[0].data() as any).code || '');
+
+      const generated = welcomeEmail({ parentName, childName, inviteCode, appUrl });
+
+      const welcomeResult = await sendWithRetry(resend, {
+        from: fromEmail,
+        to: parentEmail,
+        subject: generated.subject,
+        html: generated.html,
+      });
+
+      const welcomeLogId = `welcome-${patientId}`;
+      await setDoc(doc(db, 'emailLogs', welcomeLogId), {
+        id: welcomeLogId,
+        sessionId: `welcome-${patientId}`,
+        recipientEmail: parentEmail,
+        recipientName: parentName,
+        childName,
+        emailType: 'welcome',
+        subject: generated.subject,
+        status: welcomeResult.ok ? 'sent' : 'failed',
+        error: welcomeResult.ok ? null : welcomeResult.error || 'Send failed.',
+        sentAt: new Date().toISOString(),
+        retryCount: Math.max(0, welcomeResult.attempts - 1),
+      });
+
+      if (welcomeResult.ok) {
+        console.log(`[EMAIL SENT] welcome email to ${parentEmail} for ${patientId}`);
+      } else {
+        console.error(`[EMAIL FAILED] welcome email for ${patientId}: ${welcomeResult.error}`);
+      }
+
+      return res.status(200).json({
+        success: welcomeResult.ok,
+        logId: welcomeLogId,
+        recipientEmail: parentEmail,
+        inviteCode,
+        error: welcomeResult.ok ? undefined : welcomeResult.error,
+      });
     }
 
     const sessionId = String(body.sessionId || '').trim();

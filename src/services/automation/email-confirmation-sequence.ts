@@ -111,6 +111,26 @@ export async function checkAndSendScheduledEmails(): Promise<ScheduledEmailRunRe
   }
 }
 
+export async function sendWelcomeEmail(patientId: string): Promise<EmailSequenceResult> {
+  if (!patientId) {
+    return { success: false, message: 'A patient id is required to send the welcome email.' };
+  }
+  try {
+    const data = await callEmailAutomation({ action: 'welcome', patientId });
+    if (data.success === false) {
+      return { success: false, message: data.error || 'Could not send the welcome email.' };
+    }
+    return {
+      success: true,
+      message: `Welcome email sent to ${data.recipientEmail}${
+        data.inviteCode ? ` with invite code ${data.inviteCode}` : ''
+      }.`,
+    };
+  } catch (err: any) {
+    return { success: false, message: err?.message || 'Could not reach the email service.' };
+  }
+}
+
 let isListenerActive = false;
 let sessionListenerUnsubscribe: (() => void) | null = null;
 const processedSessionIds = new Set<string>();

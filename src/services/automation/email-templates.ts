@@ -128,6 +128,52 @@ function bulletList(title: string, items: string[]): string {
   </div>`;
 }
 
+export function generateWelcomeEmailHtml(params: {
+  parentName: string;
+  childName: string;
+  inviteCode: string;
+  appUrl?: string;
+  branding?: EmailBranding;
+}): { subject: string; html: string } {
+  const appUrl = params.appUrl || DEFAULT_APP_URL;
+
+  const accessCard = detailCard(
+    'Your Portal Access',
+    detailRow('Invite Code', params.inviteCode || 'issued by the clinic') +
+      detailRow('Login ID', 'The email address you register with', true)
+  );
+
+  const steps = `<div style="background:#ffffff;border:1px solid #ece3f0;border-radius:10px;padding:18px 20px;margin:22px 0;">
+    <div style="color:#1a202c;font-size:14px;font-weight:700;margin-bottom:8px;">How to register (2 minutes)</div>
+    <ol style="margin:0;padding-left:20px;color:#4a5568;font-size:14px;">
+      <li style="margin-bottom:6px;">Open <a href="${appUrl}" style="color:${BRAND_PRIMARY};font-weight:600;">${appUrl}</a></li>
+      <li style="margin-bottom:6px;">Tap <strong>Invite Registration</strong></li>
+      <li style="margin-bottom:6px;">Enter the invite code above, then your name and email</li>
+      <li>Set your own password</li>
+    </ol>
+  </div>`;
+
+  return {
+    subject: 'Welcome to Nurturing Minds — your parent portal access',
+    html: renderShell({
+      preheader: `Your parent portal invite code for ${params.childName}.`,
+      heading: 'Welcome to the parent portal',
+      intro: `Hi <strong>${params.parentName}</strong>, thank you for choosing ${CLINIC_NAME} for <strong>${params.childName}</strong>.`,
+      body: `${accessCard}
+${steps}
+${bulletList('What you can do in the portal', [
+        "See your child's session schedule and updates",
+        'Read approved progress summaries',
+        'View invoices and payment status',
+        'Receive appointment reminders',
+      ])}
+<p style="margin:22px 0 0 0;font-size:14px;color:#4a5568;">Please keep your invite code private — it links you to ${params.childName}'s records. If you need help, reply to this email or call us at <strong style="color:${BRAND_PRIMARY};">${CLINIC_PHONE}</strong>.</p>
+<p style="margin:22px 0 0 0;font-size:14px;color:#4a5568;">Warm regards,<br><strong style="color:${BRAND_PRIMARY};">Nurturing Minds Team</strong></p>`,
+      branding: params.branding,
+    }),
+  };
+}
+
 export function generateBookingConfirmationHtml(params: {
   parentName: string;
   childName: string;
