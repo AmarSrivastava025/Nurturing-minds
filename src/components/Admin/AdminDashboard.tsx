@@ -268,7 +268,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               Automated Email Confirmation Sequence Active
             </p>
             <p className="text-xs text-slate-500">
-              Immediate Booking Confirmation &middot; 2-Day Reminder &middot; 1-Day Feedback Request
+              Immediate Booking Confirmation &middot; 2-Day Reminder
             </p>
           </div>
         </div>

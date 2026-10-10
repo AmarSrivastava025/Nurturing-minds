@@ -815,7 +815,7 @@ export const PatientCRM: React.FC<PatientCRMProps> = ({ patients, therapists }) 
                     />
                   </div>
                   <p className="text-[10px] text-slate-500 mt-1">
-                    Booking confirmations, 2-day session reminders, and 1-day feedback forms will be sent to this email.
+                    Booking confirmations and 2-day session reminders will be sent to this email.
                   </p>
                 </div>
 
@@ -1094,7 +1094,7 @@ export const PatientCRM: React.FC<PatientCRMProps> = ({ patients, therapists }) 
                     />
                   </div>
                   <p className="text-[10px] text-slate-500 mt-1">
-                    Booking confirmations, 2-day session reminders, and 1-day feedback forms will be dispatched to this email.
+                    Booking confirmations and 2-day session reminders will be dispatched to this email.
                   </p>
                 </div>
 

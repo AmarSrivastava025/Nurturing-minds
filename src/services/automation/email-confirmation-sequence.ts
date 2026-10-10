@@ -90,7 +90,7 @@ export async function processSessionEmailSequence(
 
     return {
       success: true,
-      message: `Booking confirmation sent to ${data.recipientEmail}, with the 2-day reminder and 1-day feedback queued.`,
+      message: `Booking confirmation sent to ${data.recipientEmail}, with the 2-day reminder queued.`,
     };
   } catch (err: any) {
     return { success: false, message: err?.message || 'Could not reach the email service.' };

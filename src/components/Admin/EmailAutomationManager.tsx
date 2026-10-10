@@ -227,7 +227,7 @@ export const EmailAutomationManager: React.FC<EmailAutomationManagerProps> = ({
 
         if (res.success) {
           setActionMessage({
-            text: `Success: Booking confirmation dispatched to ${activeTestPatient.parentEmail} for ${activeTestPatient.childName}, and 2-day reminder / 1-day feedback queued.`,
+            text: `Success: Booking confirmation dispatched to ${activeTestPatient.parentEmail} for ${activeTestPatient.childName}, and the 2-day reminder queued.`,
           });
         } else {
           setActionMessage({
@@ -261,7 +261,7 @@ export const EmailAutomationManager: React.FC<EmailAutomationManagerProps> = ({
 
         if (res.success) {
           setActionMessage({
-            text: `Success: Booking confirmation email dispatched and 2-day reminder / 1-day feedback queued.`,
+            text: `Success: Booking confirmation email dispatched and the 2-day reminder queued.`,
           });
         } else {
           setActionMessage({
@@ -279,7 +279,7 @@ export const EmailAutomationManager: React.FC<EmailAutomationManagerProps> = ({
 
   const handleRunScheduledCheck = async () => {
     setIsProcessing(true);
-    setActionMessage({ text: 'Checking for due reminder and feedback emails...' });
+    setActionMessage({ text: 'Checking for due reminder emails...' });
 
     try {
       const result = await checkAndSendScheduledEmails();
@@ -369,7 +369,7 @@ export const EmailAutomationManager: React.FC<EmailAutomationManagerProps> = ({
               Automated Email Confirmation Sequence
             </h2>
             <p className="text-slate-300 text-sm mt-1 max-w-2xl">
-              Delivers 3 automated emails to enrolled families: Immediate Booking Confirmation, 2-Day Pre-Session Reminder, and 1-Day Post-Session Feedback Request.
+              Delivers 2 automated emails to enrolled families: Immediate Booking Confirmation and the 2-Day Pre-Session Reminder.
             </p>
           </div>
 
@@ -466,7 +466,7 @@ export const EmailAutomationManager: React.FC<EmailAutomationManagerProps> = ({
             <Clock className="w-4 h-4 text-amber-500" />
           </div>
           <div className="text-2xl font-bold text-amber-600">{totalScheduled}</div>
-          <p className="text-xs text-slate-500 mt-1">2-Day Reminders &amp; Feedback</p>
+              <p className="text-xs text-slate-500 mt-1">2-Day Reminders</p>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
@@ -533,7 +533,7 @@ export const EmailAutomationManager: React.FC<EmailAutomationManagerProps> = ({
 
           <p className="text-xs text-slate-600 mb-4">
             {testMode === 'patient'
-              ? 'Select any patient from your roster. The system dispatches Email 1 (Booking Confirmation) directly to the parent, and schedules Email 2 (2-Day Reminder) and Email 3 (Feedback) in Firestore.'
+                    ? 'Select any patient from your roster. The system dispatches the Booking Confirmation directly to the parent and schedules the 2-Day Reminder in Firestore.'
               : 'Select any clinic session from the calendar schedule to test the email dispatch pipeline.'}
           </p>
 
@@ -695,7 +695,7 @@ export const EmailAutomationManager: React.FC<EmailAutomationManagerProps> = ({
               >
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-purple-500"></span>
-                  <span>3. 1-Day Feedback Request</span>
+                  <span>3. 1-Day Feedback Request (paused)</span>
                 </div>
                 <Eye className="w-3.5 h-3.5 text-slate-400" />
               </button>
@@ -928,7 +928,7 @@ export const EmailAutomationManager: React.FC<EmailAutomationManagerProps> = ({
               <option value="all">All Email Types</option>
               <option value="booking_confirmation">Booking Confirmation</option>
               <option value="reminder_2days">2-Day Reminder</option>
-              <option value="feedback_1day">1-Day Feedback</option>
+                            <option value="feedback_1day">1-Day Feedback (paused)</option>
             </select>
 
             <select
@@ -1086,7 +1086,7 @@ export const EmailAutomationManager: React.FC<EmailAutomationManagerProps> = ({
                   />
                 </div>
                 <p className="text-[11px] text-slate-500 mt-1">
-                  All automated appointment confirmations, reminders, and feedback links will be dispatched to this inbox.
+                  All automated appointment confirmations and reminders will be dispatched to this inbox.
                 </p>
               </div>
 
