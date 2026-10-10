@@ -4,15 +4,16 @@ import { addMinutesToTime, formatTime12h } from './slotUtils';
 export const SESSION_MINUTES = 45;
 
 export const ROSTER_SLOT_TIMES: string[] = [
-  '09:30',
-  '10:15',
-  '11:00',
-  '11:45',
+  '10:00',
+  '10:45',
+  '11:30',
+  '12:15',
+  '13:00',
+  '13:45',
   '16:15',
   '17:00',
   '17:45',
   '18:30',
-  '19:15',
 ];
 
 export const ROSTER_DAYS: WeekDay[] = [
@@ -96,15 +97,14 @@ export function dateStrOfIso(iso: string): string {
 }
 
 export function defaultWorkingBlocks(isLead: boolean): WorkingBlock[] {
-  const days: WeekDay[] = [...ROSTER_DAYS];
   const blocks: WorkingBlock[] = [];
-  for (const day of days) {
-    blocks.push({ day, startTime: '09:30', endTime: '12:30' });
-    blocks.push(
-      isLead
-        ? { day, startTime: '15:00', endTime: '18:30' }
-        : { day, startTime: '16:15', endTime: '19:15' }
-    );
+  for (const day of ROSTER_DAYS) {
+    if (isLead) {
+      blocks.push({ day, startTime: '10:00', endTime: '14:00' });
+      blocks.push({ day, startTime: '15:00', endTime: '18:00' });
+    } else {
+      blocks.push({ day, startTime: '16:15', endTime: '19:15' });
+    }
   }
   return blocks;
 }
@@ -116,9 +116,8 @@ export function isWithinWorkingBlocks(
 ): boolean {
   const blocks = therapist?.workingBlocks;
   if (!blocks || blocks.length === 0) return true;
-  const slotEnd = addMinutesToTime(startTime, SESSION_MINUTES);
   return blocks.some(
-    (block) => block.day === day && block.startTime <= startTime && slotEnd <= block.endTime
+    (block) => block.day === day && startTime >= block.startTime && startTime < block.endTime
   );
 }
 

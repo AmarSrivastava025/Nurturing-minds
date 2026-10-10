@@ -944,6 +944,28 @@ class Store {
     return newSession;
   }
 
+  createSessionsBulk(sessionDataList: Omit<Session, 'id'>[]): Session[] {
+    const stamp = Date.now();
+    const created: Session[] = sessionDataList.map((data, index) => ({
+      ...data,
+      id: `ses-${stamp}-${index}`,
+      durationMinutes: 45,
+    }));
+
+    if (created.length === 0) return created;
+
+    this.state.sessions = [...this.state.sessions, ...created];
+    this.notify();
+
+    created.forEach((session) => {
+      cloudSaveSession(session, true).catch((err) =>
+        console.error('Error saving session to Firestore:', err)
+      );
+    });
+
+    return created;
+  }
+
   getEmailLogs(): EmailLog[] {
     return this.state.emailLogs || [];
   }

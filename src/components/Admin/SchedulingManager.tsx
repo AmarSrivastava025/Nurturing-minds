@@ -33,7 +33,7 @@ export const SchedulingManager: React.FC<SchedulingManagerProps> = ({
   patients,
   therapists,
 }) => {
-  const [viewMode, setViewMode] = useState<'planner' | 'table'>('planner');
+  const [viewMode, setViewMode] = useState<'planner' | 'table'>('table');
   const [selectedDate, setSelectedDate] = useState<string>(
     new Date().toISOString().split('T')[0]
   );

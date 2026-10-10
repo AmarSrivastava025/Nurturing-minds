@@ -16,6 +16,7 @@ import {
   sessionsPerWeekByPatient,
   slotLabel,
   startOfWeek,
+  timeOfIso,
   toDateStr,
 } from '../../utils/rosterUtils';
 
@@ -35,6 +36,8 @@ export const TherapistRoster: React.FC<TherapistRosterProps> = ({ sessions, pati
   const [selectedDate, setSelectedDate] = useState<string>(() => toDateStr(new Date()));
   const [assignTarget, setAssignTarget] = useState<{ therapistId: string; time: string } | null>(null);
   const [search, setSearch] = useState('');
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
 
   const activeTherapists = useMemo(
     () => therapists.filter((t) => t.status !== 'on_leave'),
@@ -118,6 +121,53 @@ export const TherapistRoster: React.FC<TherapistRosterProps> = ({ sessions, pati
     store.deleteSession(session.id);
   };
 
+  const handlePublishPattern = (weeks: number) => {
+    setIsPublishing(true);
+    const weekStartMs = weekStart.getTime();
+    const weekEndMs = addDays(weekStart, 7).getTime();
+
+    const pattern = sessions.filter((s) => {
+      if (s.status === 'missed') return false;
+      const t = new Date(s.scheduledAt).getTime();
+      return t >= weekStartMs && t < weekEndMs;
+    });
+
+    const toCreate: Omit<Session, 'id'>[] = [];
+    for (let week = 1; week <= weeks; week++) {
+      for (const source of pattern) {
+        const time = timeOfIso(source.scheduledAt);
+        const targetDate = toDateStr(
+          addDays(parseDateStr(dateStrOfIso(source.scheduledAt)), 7 * week)
+        );
+        const alreadyThere = sessions.some(
+          (x) =>
+            x.patientId === source.patientId &&
+            x.therapistId === source.therapistId &&
+            dateStrOfIso(x.scheduledAt) === targetDate &&
+            timeOfIso(x.scheduledAt) === time
+        );
+        if (alreadyThere) continue;
+        toCreate.push({
+          patientId: source.patientId,
+          therapistId: source.therapistId,
+          scheduledAt: isoFor(targetDate, time),
+          status: 'scheduled',
+          timeSlot: slotLabel(time),
+          durationMinutes: 45,
+          notifyParent: false,
+        });
+      }
+    }
+
+    store.createSessionsBulk(toCreate);
+    setMessage(
+      toCreate.length === 0
+        ? 'Nothing to publish - the following weeks already match this pattern.'
+        : `Published ${toCreate.length} sessions across the next ${weeks} week(s).`
+    );
+    setIsPublishing(false);
+  };
+
   return (
     <div className="space-y-5">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-gradient-to-r from-[#6D0281] to-[#570167] rounded-2xl p-5 text-white shadow-lg">
@@ -186,6 +236,26 @@ export const TherapistRoster: React.FC<TherapistRosterProps> = ({ sessions, pati
             </button>
           );
         })}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-xs">
+        <span className="text-xs font-semibold text-slate-600">Repeat this week's pattern:</span>
+        {[2, 4, 8].map((weeks) => (
+          <button
+            key={weeks}
+            disabled={isPublishing}
+            onClick={() => handlePublishPattern(weeks)}
+            className="px-3 py-1.5 rounded-lg border border-purple-200 bg-purple-50 text-[#6D0281] text-xs font-semibold hover:bg-purple-100 transition disabled:opacity-50"
+          >
+            +{weeks} weeks
+          </button>
+        ))}
+        <span className="text-[10px] text-slate-400">
+          Copies this week's bookings forward. Plan the week first, then publish.
+        </span>
+        {message && (
+          <span className="text-xs font-semibold text-emerald-600 ml-auto">{message}</span>
+        )}
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-5">
