@@ -1,5 +1,5 @@
 import { DoctorProfile, Expense, Invoice, InviteCode, Notification, Patient, Program, ProgressSummary, PublishedVideo, Session, Therapist } from './types';
-import { defaultWorkingBlocks } from './utils/rosterUtils';
+import { defaultWorkingBlocks, type RosterStaffKind } from './utils/rosterUtils';
 
 export const BRAND = {
   primary: '#6D0281', // deep plum-purple confirmed from client swatch
@@ -74,37 +74,44 @@ export function migrateClinicAddress<T extends { clinicAddress?: string }>(profi
 export const REAL_CLINIC_ROSTER: Array<{
   id: string;
   name: string;
-  isLead: boolean;
+  kind: RosterStaffKind;
   email: string;
   qualification: string;
 }> = [
   {
     id: 'th-1',
     name: 'Jothika',
-    isLead: false,
+    kind: 'ot',
     email: 'jothika@nurturingminds.com',
     qualification: 'Pediatric Occupational Therapist',
   },
   {
     id: 'th-2',
     name: 'Hari',
-    isLead: false,
+    kind: 'ot',
     email: 'hari@nurturingminds.com',
     qualification: 'Pediatric Occupational Therapist',
   },
   {
     id: 'th-3',
     name: 'Dr. Sweety Bhatnagar',
-    isLead: true,
+    kind: 'lead',
     email: 'connect@drsweetybhatnagar.com',
     qualification: 'Director & Lead Consultant (BOT, MOT, SI Certified)',
   },
   {
     id: 'th-4',
     name: 'Nayima',
-    isLead: false,
+    kind: 'ot',
     email: 'nayima@nurturingminds.com',
     qualification: 'Pediatric Occupational Therapist',
+  },
+  {
+    id: 'th-5',
+    name: 'Utkarsh',
+    kind: 'speech',
+    email: 'utkarsh@nurturingminds.com',
+    qualification: 'Speech & Language Therapist (Freelance)',
   },
 ];
 
@@ -113,7 +120,7 @@ export function migrateTherapistsToRealRoster(therapists: Therapist[]): Therapis
   const result: Therapist[] = therapists.map((t) => t);
 
   for (const spec of REAL_CLINIC_ROSTER) {
-    const blocks = defaultWorkingBlocks(spec.isLead);
+    const blocks = defaultWorkingBlocks(spec.kind);
     const index = result.findIndex((t) => t.id === spec.id);
 
     if (index === -1) {

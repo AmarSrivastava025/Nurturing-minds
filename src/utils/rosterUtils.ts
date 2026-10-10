@@ -14,6 +14,7 @@ export const ROSTER_SLOT_TIMES: string[] = [
   '17:00',
   '17:45',
   '18:30',
+  '19:15',
 ];
 
 export const ROSTER_DAYS: WeekDay[] = [
@@ -96,10 +97,20 @@ export function dateStrOfIso(iso: string): string {
   return toDateStr(new Date(iso));
 }
 
-export function defaultWorkingBlocks(isLead: boolean): WorkingBlock[] {
+export type RosterStaffKind = 'lead' | 'ot' | 'speech';
+
+export function defaultWorkingBlocks(kind: RosterStaffKind): WorkingBlock[] {
   const blocks: WorkingBlock[] = [];
+
+  if (kind === 'speech') {
+    for (const day of ROSTER_DAYS) {
+      blocks.push({ day, startTime: '18:30', endTime: '20:15' });
+    }
+    return blocks;
+  }
+
   for (const day of ROSTER_DAYS) {
-    if (isLead) {
+    if (kind === 'lead') {
       blocks.push({ day, startTime: '10:00', endTime: '14:00' });
       blocks.push({ day, startTime: '15:00', endTime: '18:00' });
     } else {
