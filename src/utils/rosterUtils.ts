@@ -4,12 +4,12 @@ import { addMinutesToTime, formatTime12h } from './slotUtils';
 export const SESSION_MINUTES = 45;
 
 export const ROSTER_SLOT_TIMES: string[] = [
-  '10:00',
-  '10:45',
-  '11:30',
-  '12:15',
-  '13:00',
-  '13:45',
+  '09:30',
+  '10:15',
+  '11:00',
+  '11:45',
+  '12:30',
+  '13:15',
   '16:15',
   '17:00',
   '17:45',
@@ -111,7 +111,7 @@ export function defaultWorkingBlocks(kind: RosterStaffKind): WorkingBlock[] {
 
   for (const day of ROSTER_DAYS) {
     if (kind === 'lead') {
-      blocks.push({ day, startTime: '10:00', endTime: '14:00' });
+      blocks.push({ day, startTime: '09:30', endTime: '14:00' });
       blocks.push({ day, startTime: '15:00', endTime: '18:00' });
     } else {
       blocks.push({ day, startTime: '16:15', endTime: '19:15' });
