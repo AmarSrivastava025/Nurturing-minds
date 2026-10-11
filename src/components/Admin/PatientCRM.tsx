@@ -24,9 +24,10 @@ import { store } from '../../services/store';
 import {
   createWhatsAppDirectUrl,
   generateParentInviteText,
+  generateAmountDueText,
   cloudSaveMessageLog,
 } from '../../services/automation/whatsapp-sms-service';
-import { sendWelcomeEmail } from '../../services/automation/email-confirmation-sequence';
+import { sendWelcomeEmail, sendAmountDueEmail } from '../../services/automation/email-confirmation-sequence';
 import { BatchPatientUploadModal } from './BatchPatientUploadModal';
 import { LastMinuteTherapistSwapModal } from './LastMinuteTherapistSwapModal';
 import { downloadPatientCsvTemplate } from '../../utils/csvPatientUtils';
@@ -44,6 +45,11 @@ export const PatientCRM: React.FC<PatientCRMProps> = ({ patients, therapists }) 
   const [showBatchUploadModal, setShowBatchUploadModal] = useState(false);
   const [batchSuccessMsg, setBatchSuccessMsg] = useState<string | null>(null);
   const [welcomeFeedback, setWelcomeFeedback] = useState<{
+    id: string;
+    text: string;
+    error?: boolean;
+  } | null>(null);
+  const [amountFeedback, setAmountFeedback] = useState<{
     id: string;
     text: string;
     error?: boolean;
@@ -263,6 +269,48 @@ export const PatientCRM: React.FC<PatientCRMProps> = ({ patients, therapists }) 
     const result = await sendWelcomeEmail(patient.id);
     setWelcomeFeedback({ id: patient.id, text: result.message, error: !result.success });
     setTimeout(() => setWelcomeFeedback(null), 6000);
+  };
+
+  const handleSendAmountDue = async (patient: Patient) => {
+    const useFather = patient.primaryContact === 'father';
+    const phone = useFather
+      ? patient.fatherContact || patient.motherContact
+      : patient.motherContact || patient.fatherContact;
+    const parentName = (useFather ? patient.fatherName : patient.motherName) || 'Parent';
+
+    const body = generateAmountDueText({
+      parentName,
+      childName: patient.childName,
+      amount: patient.pendingPaymentAmount,
+      month: patient.pendingPaymentMonth,
+    });
+
+    if (phone) {
+      window.open(createWhatsAppDirectUrl(phone, body), '_blank');
+      cloudSaveMessageLog({
+        id: `msg-due-${patient.id}-${Date.now()}`,
+        sessionId: `amount-due-${patient.id}`,
+        recipientPhone: phone,
+        recipientName: parentName,
+        childName: patient.childName,
+        channel: 'whatsapp',
+        messageType: 'amount_due',
+        sentAt: new Date().toISOString(),
+        status: 'sent',
+        body,
+        retryCount: 0,
+      }).catch((err) => console.error('Error logging amount-due message:', err));
+    }
+
+    const result = await sendAmountDueEmail(patient.id);
+    setAmountFeedback({
+      id: patient.id,
+      text: phone
+        ? `WhatsApp reminder opened. ${result.message}`
+        : result.message,
+      error: !result.success,
+    });
+    setTimeout(() => setAmountFeedback(null), 6000);
   };
 
   return (
@@ -567,7 +615,28 @@ export const PatientCRM: React.FC<PatientCRMProps> = ({ patients, therapists }) 
                   <Mail className="w-3 h-3" />
                   Welcome Email
                 </button>
+
+                {patient.paymentStatus !== 'current' && (
+                  <button
+                    onClick={() => handleSendAmountDue(patient)}
+                    className="px-2.5 py-1.5 text-xs font-semibold rounded-xl bg-amber-50 text-amber-800 hover:bg-amber-100 transition flex items-center gap-1 cursor-pointer"
+                    title="Send the amount-due reminder via WhatsApp and email"
+                  >
+                    <AlertTriangle className="w-3 h-3 text-amber-700" />
+                    Amount Due
+                  </button>
+                )}
               </div>
+
+              {amountFeedback?.id === patient.id && (
+                <p
+                  className={`text-[10px] mt-1 ${
+                    amountFeedback.error ? 'text-rose-600' : 'text-emerald-600'
+                  }`}
+                >
+                  {amountFeedback.text}
+                </p>
+              )}
 
               {welcomeFeedback?.id === patient.id && (
                 <p

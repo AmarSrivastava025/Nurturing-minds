@@ -131,6 +131,24 @@ export async function sendWelcomeEmail(patientId: string): Promise<EmailSequence
   }
 }
 
+export async function sendAmountDueEmail(patientId: string): Promise<EmailSequenceResult> {
+  if (!patientId) {
+    return { success: false, message: 'A patient id is required to send the payment reminder.' };
+  }
+  try {
+    const data = await callEmailAutomation({ action: 'amount_due', patientId });
+    if (data.success === false) {
+      return { success: false, message: data.error || 'Could not send the payment reminder.' };
+    }
+    return {
+      success: true,
+      message: `Payment reminder emailed to ${data.recipientEmail}.`,
+    };
+  } catch (err: any) {
+    return { success: false, message: err?.message || 'Could not reach the email service.' };
+  }
+}
+
 let isListenerActive = false;
 let sessionListenerUnsubscribe: (() => void) | null = null;
 const processedSessionIds = new Set<string>();

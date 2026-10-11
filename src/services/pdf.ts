@@ -278,9 +278,9 @@ export async function generateInvoicePDF(
   doc.text(`${symptomTruncated}`, 42, 96);
 
   doc.setFont('helvetica', 'bold');
-  doc.text('Assigned Therapist:', 18, 102);
+  doc.text('Care Provided By:', 18, 102);
   doc.setFont('helvetica', 'normal');
-  doc.text(`${therapist?.name || 'Dr. Sweety Bhatnagar'}`, 50, 102);
+  doc.text('Nurturing Minds Clinical Team', 50, 102);
 
   doc.setFont('helvetica', 'bold');
   doc.text('Registration ID:', 18, 108);

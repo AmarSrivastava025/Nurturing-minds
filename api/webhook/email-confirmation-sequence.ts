@@ -230,6 +230,42 @@ ${bulletList('What you can do in the portal', [
   };
 }
 
+function amountDueEmail(params: {
+  parentName: string;
+  childName: string;
+  amount?: number;
+  month?: string;
+  appUrl?: string;
+}): { subject: string; html: string } {
+  const baseUrl = params.appUrl || DEFAULT_APP_URL;
+  const amountText = params.amount
+    ? `Rs. ${params.amount.toLocaleString('en-IN')}`
+    : 'the outstanding balance';
+  const periodText = params.month ? ` for ${params.month}` : '';
+
+  const rows =
+    detailRow('Child', params.childName) +
+    detailRow('Amount Due', `${amountText}${periodText}`, true);
+
+  return {
+    subject: `Payment reminder for ${params.childName}`,
+    html: renderShell({
+      preheader: `A gentle payment reminder from ${CLINIC_NAME}.`,
+      heading: 'A gentle payment reminder',
+      intro: `Hi <strong>${params.parentName}</strong>, we hope ${params.childName} is doing well. This is a friendly reminder about a payment due on your account.`,
+      body: `${detailCard('Payment Summary', rows)}
+${bulletList('How to pay', [
+        'UPI at the reception counter during your next visit',
+        'Bank transfer - contact us for account details',
+        'Already paid? Share the receipt so we can update our records',
+      ])}
+<p style="margin:22px 0 0 0;font-size:14px;color:#4a5568;">If you would like to discuss a payment plan or believe this is in error, simply reply to this email or call us at <strong style="color:${BRAND_PRIMARY};">${CLINIC_PHONE}</strong>.</p>
+<p style="margin:22px 0 0 0;font-size:14px;color:#4a5568;">Warm regards,<br><strong style="color:${BRAND_PRIMARY};">Nurturing Minds Team</strong></p>`,
+      appUrl: baseUrl,
+    }),
+  };
+}
+
 function bookingEmail(params: {
   parentName: string;
   childName: string;
@@ -553,6 +589,66 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         recipientEmail: parentEmail,
         inviteCode,
         error: welcomeResult.ok ? undefined : welcomeResult.error,
+      });
+    }
+
+    if (body.action === 'amount_due') {
+      const patientId = String(body.patientId || '').trim();
+      if (!patientId) {
+        return res.status(400).json({ error: 'patientId is required in the request body.' });
+      }
+
+      const patientSnap = await getDoc(doc(db, 'patients', patientId));
+      if (!patientSnap.exists()) {
+        return res.status(404).json({ error: `Patient ${patientId} was not found.` });
+      }
+      const patient: any = patientSnap.data();
+      const childName = patient.childName || 'your child';
+      const parentName = patient.motherName || patient.fatherName || 'Parent';
+      const parentEmail = String(patient.parentEmail || '').trim().toLowerCase();
+      const amount = Number(patient.pendingPaymentAmount) || undefined;
+      const month = patient.pendingPaymentMonth || undefined;
+
+      if (!parentEmail || !parentEmail.includes('@')) {
+        const msg = `Parent email is missing or invalid for ${childName}. Add an email to the patient record first.`;
+        return res.status(200).json({ success: false, error: msg });
+      }
+
+      const generated = amountDueEmail({ parentName, childName, amount, month, appUrl });
+
+      const dueResult = await sendWithRetry(resend, {
+        from: fromEmail,
+        to: parentEmail,
+        subject: generated.subject,
+        html: generated.html,
+      });
+
+      const dueLogId = `amount-due-${patientId}-${Date.now()}`;
+      await setDoc(doc(db, 'emailLogs', dueLogId), {
+        id: dueLogId,
+        sessionId: `amount-due-${patientId}`,
+        recipientEmail: parentEmail,
+        recipientName: parentName,
+        childName,
+        emailType: 'amount_due',
+        subject: generated.subject,
+        status: dueResult.ok ? 'sent' : 'failed',
+        error: dueResult.ok ? null : dueResult.error || 'Send failed.',
+        sentAt: new Date().toISOString(),
+        retryCount: Math.max(0, dueResult.attempts - 1),
+      });
+
+      if (dueResult.ok) {
+        console.log(`[EMAIL SENT] amount-due reminder to ${parentEmail} for ${patientId}`);
+      } else {
+        console.error(`[EMAIL FAILED] amount-due reminder for ${patientId}: ${dueResult.error}`);
+      }
+
+      return res.status(200).json({
+        success: dueResult.ok,
+        logId: dueLogId,
+        recipientEmail: parentEmail,
+        error: dueResult.ok ? undefined : dueResult.error,
       });
     }
 

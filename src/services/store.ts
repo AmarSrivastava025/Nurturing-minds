@@ -1243,6 +1243,119 @@ class Store {
     }
   }
 
+  // --- Admin Short-Notice Assignment (assign a therapist to an unstaffed slot) ---
+  assignSessionTherapist(
+    sessionId: string,
+    therapistId: string,
+    options?: { notifyParent?: boolean }
+  ) {
+    const session = this.state.sessions.find((s) => s.id === sessionId);
+    const therapist = this.state.therapists.find((t) => t.id === therapistId);
+    if (!session || !therapist) return;
+
+    const patient = this.state.patients.find((p) => p.id === session.patientId);
+    const childName = patient?.childName || 'Child';
+    const slotTime = session.timeSlot || '45-min slot';
+
+    let updatedSession: Session | null = null;
+    this.state.sessions = this.state.sessions.map((s) => {
+      if (s.id === sessionId) {
+        updatedSession = {
+          ...s,
+          therapistId,
+          isSubstitute: false,
+          originalTherapistId: undefined,
+          substituteReason: undefined,
+        };
+        return updatedSession;
+      }
+      return s;
+    });
+
+    const createdNotifs: Notification[] = [];
+    if (updatedSession) {
+      createdNotifs.push({
+        id: `notif-${Date.now()}-assign`,
+        userId: therapist.userId,
+        targetRole: 'therapist',
+        type: 'therapist_mapped',
+        message: `Dr. Sweety Bhatnagar assigned you to conduct ${childName}'s session (${slotTime}) on ${new Date(
+          session.scheduledAt
+        ).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}.`,
+        read: false,
+        createdAt: new Date().toISOString(),
+        meta: { sessionId, patientId: session.patientId },
+      });
+    }
+
+    if (options?.notifyParent && patient?.parentUserId && updatedSession) {
+      createdNotifs.push({
+        id: `notif-${Date.now()}-assign-parent`,
+        userId: patient.parentUserId,
+        targetRole: 'parent',
+        type: 'session_scheduled',
+        message: `${childName}'s session (${slotTime}) is confirmed. Our clinical team will conduct the session.`,
+        read: false,
+        createdAt: new Date().toISOString(),
+        meta: { sessionId, patientId: session.patientId },
+      });
+    }
+
+    this.state.notifications = [...createdNotifs, ...this.state.notifications];
+    this.notify();
+
+    if (updatedSession) {
+      cloudSaveSession(updatedSession).catch((err) =>
+        console.error('Error assigning session therapist to Firestore:', err)
+      );
+    }
+    createdNotifs.forEach((n) => cloudSaveNotification(n));
+  }
+
+  // --- Therapist "I took this session" claim on an unstaffed slot ---
+  claimSession(sessionId: string, therapistId: string): Session | null {
+    const session = this.state.sessions.find((s) => s.id === sessionId);
+    const therapist = this.state.therapists.find((t) => t.id === therapistId);
+    if (!session || !therapist) return null;
+    if (session.therapistId && session.therapistId !== therapistId) return null;
+
+    const patient = this.state.patients.find((p) => p.id === session.patientId);
+    const childName = patient?.childName || 'Child';
+    const slotTime = session.timeSlot || '45-min slot';
+
+    let updatedSession: Session | null = null;
+    this.state.sessions = this.state.sessions.map((s) => {
+      if (s.id === sessionId) {
+        updatedSession = { ...s, therapistId, isSubstitute: false };
+        return updatedSession;
+      }
+      return s;
+    });
+
+    if (!updatedSession) return null;
+
+    const notif: Notification = {
+      id: `notif-${Date.now()}-claim`,
+      userId: 'admin',
+      targetRole: 'admin',
+      type: 'general',
+      message: `${therapist.name} took ${childName}'s open session (${slotTime}).`,
+      read: false,
+      createdAt: new Date().toISOString(),
+      meta: { sessionId, patientId: session.patientId, therapistId },
+    };
+
+    this.state.notifications = [notif, ...this.state.notifications];
+    this.notify();
+
+    cloudSaveSession(updatedSession).catch((err) =>
+      console.error('Error saving claimed session to Firestore:', err)
+    );
+    cloudSaveNotification(notif);
+
+    return updatedSession;
+  }
+
   // --- Progress AI Approval Queue ---
   addProgressDraft(
     summary: Omit<ProgressSummary, 'id' | 'approved' | 'approvedAt'>

@@ -70,10 +70,16 @@ export const TherapistView: React.FC<TherapistViewProps> = ({
   // Fast 1-3 word note logging state
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [fastNoteText, setFastNoteText] = useState('');
+  const [claimFeedback, setClaimFeedback] = useState<string | null>(null);
 
   // Therapist's assigned sessions (read-only schedule!)
   const mySessions = sessions
     .filter((s) => s.therapistId === therapist.id)
+    .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
+
+  // Open, unstaffed sessions any therapist can take ("I took this session")
+  const openSessions = sessions
+    .filter((s) => !s.therapistId && s.status === 'scheduled')
     .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
 
   // Children assigned to this therapist
@@ -118,6 +124,16 @@ export const TherapistView: React.FC<TherapistViewProps> = ({
     store.logTherapistNote(sessionId, fastNoteText.trim());
     setActiveSessionId(null);
     setFastNoteText('');
+  };
+
+  const handleClaimSession = (sessionId: string) => {
+    const claimed = store.claimSession(sessionId, therapist.id);
+    if (claimed) {
+      setClaimFeedback(
+        `You've taken this session. It is now in your schedule — log a 1-3 word note after the session to complete it.`
+      );
+      setTimeout(() => setClaimFeedback(null), 6000);
+    }
   };
 
   const getEmbedUrl = (url: string) => {
@@ -247,6 +263,63 @@ export const TherapistView: React.FC<TherapistViewProps> = ({
               </p>
             </div>
           </div>
+
+          {/* Open / Unstaffed Sessions — any therapist can take these */}
+          {openSessions.length > 0 && (
+            <div className="bg-white rounded-3xl border border-emerald-200 shadow-xs overflow-hidden">
+              <div className="p-4 sm:p-5 border-b border-emerald-100 flex items-center justify-between bg-emerald-50/50">
+                <h3 className="text-xs font-bold text-emerald-900 uppercase tracking-wider flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-emerald-600" />
+                  Open Sessions ({openSessions.length}) — take a slot
+                </h3>
+                <span className="text-[11px] text-emerald-700">
+                  Unstaffed slots. Tap &quot;I took this session&quot; to add it to your schedule.
+                </span>
+              </div>
+              {claimFeedback && (
+                <div className="px-4 py-2 text-[11px] font-semibold text-emerald-800 bg-emerald-50 border-b border-emerald-100">
+                  {claimFeedback}
+                </div>
+              )}
+              <div className="divide-y divide-slate-100 text-xs">
+                {openSessions.map((session) => {
+                  const patient = getPatient(session.patientId);
+                  const dateStr = new Date(session.scheduledAt).toLocaleDateString('en-IN', {
+                    weekday: 'short',
+                    day: 'numeric',
+                    month: 'short',
+                  });
+                  return (
+                    <div
+                      key={session.id}
+                      className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-emerald-50/30 transition"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-700 font-bold text-xs shrink-0 border border-emerald-100">
+                          <Calendar className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-slate-900">
+                            {patient?.childName || 'Child'} ({patient?.age} yrs, {patient?.bloodGroup})
+                          </p>
+                          <p className="text-[11px] text-slate-500">
+                            {dateStr} • {session.timeSlot || '45-min slot'}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleClaimSession(session.id)}
+                        className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        I took this session
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Therapist's Schedule with Quick-Fire 1-3 Word Note Logger */}
           <div className="bg-white rounded-3xl border border-purple-100/80 shadow-xs overflow-hidden">

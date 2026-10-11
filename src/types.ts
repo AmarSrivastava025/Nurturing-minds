@@ -203,7 +203,7 @@ export interface EmailLog {
   recipientName?: string;
   childName?: string;
   therapistName?: string;
-  emailType: 'booking_confirmation' | 'reminder_2days' | 'feedback_1day' | 'welcome';
+  emailType: 'booking_confirmation' | 'reminder_2days' | 'feedback_1day' | 'welcome' | 'amount_due';
   sentAt: string; // ISO timestamp
   status: 'sent' | 'failed' | 'scheduled';
   error?: string | null;
@@ -220,7 +220,7 @@ export interface MessageLog {
   childName: string;
   therapistName?: string;
   channel: 'whatsapp' | 'sms';
-    messageType: 'reminder_24h' | 'reminder_2h' | 'therapist_swap' | 'booking_alert' | 'parent_invite';
+    messageType: 'reminder_24h' | 'reminder_2h' | 'therapist_swap' | 'booking_alert' | 'parent_invite' | 'amount_due';
   sentAt: string; // ISO timestamp
   status: 'sent' | 'failed' | 'scheduled';
   error?: string | null;

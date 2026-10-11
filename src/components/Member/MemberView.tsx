@@ -109,10 +109,8 @@ export const MemberView: React.FC<MemberViewProps> = ({
           </div>
 
           <div className="bg-white/15 backdrop-blur-xs p-3.5 rounded-xl border border-white/20 text-xs">
-            <p className="text-purple-200 text-[10px] uppercase font-bold tracking-wider">Assigned Therapist</p>
-            <p className="font-bold text-white text-sm mt-0.5">
-              {assignedTherapist ? assignedTherapist.name : 'Dr. Sweety Bhatnagar'}
-            </p>
+            <p className="text-purple-200 text-[10px] uppercase font-bold tracking-wider">Your Care Team</p>
+            <p className="font-bold text-white text-sm mt-0.5">Nurturing Minds Clinical Team</p>
             <p className="text-[11px] text-purple-200">{patient.sessionsPerWeek} sessions / week</p>
           </div>
         </div>
@@ -241,7 +239,6 @@ export const MemberView: React.FC<MemberViewProps> = ({
                 </div>
               ) : (
                 childSessions.map((session) => {
-                  const therapist = therapists.find((t) => t.id === session.therapistId);
                   const dateStr = new Date(session.scheduledAt).toLocaleDateString('en-IN', {
                     weekday: 'long',
                     day: 'numeric',
@@ -258,7 +255,7 @@ export const MemberView: React.FC<MemberViewProps> = ({
                         <div>
                           <p className="text-xs font-bold text-slate-900">{dateStr}</p>
                           <p className="text-[11px] text-slate-500 mt-0.5">
-                            Slot: {session.timeSlot || '04:00 PM - 05:00 PM'} • Therapist: <strong>{therapist ? therapist.name : 'Dr. Sweety Bhatnagar'}</strong>
+                            Slot: {session.timeSlot || '04:00 PM - 05:00 PM'} • Conducted by our clinical team
                           </p>
                         </div>
                       </div>
@@ -448,42 +445,19 @@ export const MemberView: React.FC<MemberViewProps> = ({
             </div>
           </div>
 
-          {/* Assigned Therapist Profile */}
+          {/* Therapy Care (therapist identity withheld from the parent portal) */}
           <div>
             <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-3">
-              {patient.childName}&apos;s Assigned Pediatric Therapy Care
+              {patient.childName}&apos;s Pediatric Therapy Care
             </h3>
-            {assignedTherapist ? (
-              <div className="bg-white p-5 rounded-2xl border-2 border-purple-100 shadow-xs flex flex-col sm:flex-row items-center sm:items-start gap-4">
-                <div className="w-20 h-20 rounded-2xl overflow-hidden bg-slate-100 shrink-0 border-2 border-[#6D0281]/30 shadow-xs">
-                  <img
-                    src={assignedTherapist.photoUrl}
-                    alt={assignedTherapist.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="space-y-1 text-center sm:text-left">
-                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                    <h4 className="text-sm font-bold text-slate-900">{assignedTherapist.name}</h4>
-                    <span className="text-[10px] font-bold bg-[#6D0281] text-white px-2.5 py-0.5 rounded-full">
-                      Primary Assigned Therapist
-                    </span>
-                  </div>
-                  <p className="text-xs font-medium text-[#6D0281]">{assignedTherapist.qualification}</p>
-                  <p className="text-xs text-slate-600 mt-1 leading-relaxed">{assignedTherapist.summary}</p>
-                  <p className="text-[11px] text-purple-700 font-semibold pt-1">
-                    Specialization: {assignedTherapist.specialization || 'Pediatric Sensory Integration & Motor Development'}
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="p-4 bg-purple-50 rounded-2xl border border-purple-100 text-xs text-purple-900">
-                <p className="font-semibold text-[#6D0281]">Direct Supervision</p>
-                <p className="text-[11px] text-purple-800 mt-0.5">
-                  {patient.childName}&apos;s clinical sessions and developmental protocols are directly overseen and administered under Dr. Sweety Bhatnagar.
-                </p>
-              </div>
-            )}
+            <div className="p-4 bg-purple-50 rounded-2xl border border-purple-100 text-xs text-purple-900">
+              <p className="font-semibold text-[#6D0281]">Supervised Clinical Team</p>
+              <p className="text-[11px] text-purple-800 mt-0.5">
+                {patient.childName}&apos;s sessions are delivered by the Nurturing Minds clinical team and directly
+                overseen by Dr. Sweety Bhatnagar. For any questions about your child&apos;s plan, please contact the
+                centre at <strong>{doctorProfile.phone}</strong>.
+              </p>
+            </div>
           </div>
         </div>
       )}

@@ -42,6 +42,8 @@ export const SchedulingManager: React.FC<SchedulingManagerProps> = ({
   const [editingSession, setEditingSession] = useState<Session | null>(null);
   const [swapSession, setSwapSession] = useState<Session | null>(null);
   const [showSwapModal, setShowSwapModal] = useState(false);
+  const [assignSession, setAssignSession] = useState<Session | null>(null);
+  const [assignTherapistId, setAssignTherapistId] = useState<string>('');
 
   // Search & Filter State for Master Table
   const [searchTerm, setSearchTerm] = useState('');
@@ -355,9 +357,13 @@ export const SchedulingManager: React.FC<SchedulingManagerProps> = ({
 
                           <td className="py-3.5 px-4">
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <p className="font-semibold text-slate-800 flex items-center gap-1.5">
+                              <p
+                                className={`font-semibold flex items-center gap-1.5 ${
+                                  therapist ? 'text-slate-800' : 'text-amber-700'
+                                }`}
+                              >
                                 <UserCheck className="w-3.5 h-3.5 text-[#6D0281]" />
-                                {therapist?.name || 'Dr. Sweety Bhatnagar'}
+                                {therapist?.name || 'Unassigned'}
                               </p>
                               {session.isSubstitute && (
                                 <span
@@ -398,6 +404,20 @@ export const SchedulingManager: React.FC<SchedulingManagerProps> = ({
 
                           <td className="py-3.5 px-4 text-right">
                             <div className="flex items-center justify-end gap-1.5">
+                              {!session.therapistId && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setAssignSession(session);
+                                    setAssignTherapistId(therapists[0]?.id || '');
+                                  }}
+                                  className="px-2 py-1 text-[11px] font-bold text-white bg-[#6D0281] hover:bg-[#570167] rounded-lg transition flex items-center gap-1"
+                                  title="Assign a therapist to this unstaffed slot"
+                                >
+                                  <UserCheck className="w-3 h-3" />
+                                  Assign
+                                </button>
+                              )}
                               <button
                                 type="button"
                                 onClick={() => {
@@ -610,6 +630,105 @@ export const SchedulingManager: React.FC<SchedulingManagerProps> = ({
         isOpen={showWeeklyConfigModal}
         onClose={() => setShowWeeklyConfigModal(false)}
       />
+
+      {/* Admin Short-Notice Therapist Assignment Modal */}
+      {assignSession && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+          <div className="w-full max-w-md bg-white rounded-2xl p-6 shadow-2xl border border-purple-100 my-8 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Assign Therapist</h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {getPatient(assignSession.patientId)?.childName || 'Child'} •{' '}
+                  {new Date(assignSession.scheduledAt).toLocaleDateString('en-IN', {
+                    weekday: 'short',
+                    day: 'numeric',
+                    month: 'short',
+                  })}{' '}
+                  • {assignSession.timeSlot || '45-min slot'}
+                </p>
+              </div>
+              <button
+                onClick={() => setAssignSession(null)}
+                className="text-slate-400 hover:text-slate-700 text-lg font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-1.5 max-h-[50vh] overflow-y-auto">
+              {therapists.map((t) => {
+                const isSelected = t.id === assignTherapistId;
+                const hasConflict = sessions.some(
+                  (s) =>
+                    s.id !== assignSession.id &&
+                    s.therapistId === t.id &&
+                    s.timeSlot === assignSession.timeSlot &&
+                    s.scheduledAt.split('T')[0] === assignSession.scheduledAt.split('T')[0] &&
+                    s.status === 'scheduled'
+                );
+                return (
+                  <label
+                    key={t.id}
+                    className={`p-2.5 rounded-xl border flex items-center justify-between cursor-pointer transition text-xs ${
+                      isSelected
+                        ? 'bg-purple-50 border-[#6D0281] ring-1 ring-[#6D0281]'
+                        : 'bg-white border-slate-200 hover:border-purple-200 hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <input
+                        type="radio"
+                        name="assignTherapist"
+                        value={t.id}
+                        checked={isSelected}
+                        onChange={() => setAssignTherapistId(t.id)}
+                        className="text-[#6D0281] focus:ring-[#6D0281]"
+                      />
+                      <div>
+                        <span className="font-bold text-slate-900">{t.name}</span>
+                        <p className="text-[11px] text-slate-500">{t.qualification}</p>
+                      </div>
+                    </div>
+                    {hasConflict ? (
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200">
+                        Slot busy
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        Available
+                      </span>
+                    )}
+                  </label>
+                );
+              })}
+            </div>
+
+            <div className="pt-4 mt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setAssignSession(null)}
+                className="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={!assignTherapistId}
+                onClick={() => {
+                  if (!assignTherapistId) return;
+                  store.assignSessionTherapist(assignSession.id, assignTherapistId);
+                  setAssignSession(null);
+                }}
+                className="px-4 py-1.5 text-xs font-bold text-white bg-[#6D0281] hover:bg-[#570167] rounded-xl transition shadow-xs flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <UserCheck className="w-3.5 h-3.5" />
+                Confirm Assignment
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Last-Minute Therapist Swap Modal */}
       <LastMinuteTherapistSwapModal

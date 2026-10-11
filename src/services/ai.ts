@@ -138,7 +138,7 @@ export async function generateProgressSummary(
           {
             role: 'system',
             content:
-              'You are an assistant for Dr. Sweety Bhatnagar at Nurturing Minds Therapy Center. Your task is to turn raw 1-3 word therapist notes into a single warm, encouraging, parent-readable progress paragraph (3-4 sentences max). Never use clinical jargon; keep the tone comforting and developmental.',
+              'You are an assistant for the clinical team at Nurturing Minds Therapy Center. Your task is to turn raw 1-3 word therapist notes into a single warm, encouraging, parent-readable progress paragraph (3-4 concise sentences max). Never use clinical jargon; keep the tone comforting and developmental. Do not mention any therapist or staff member by name or role — refer to "our clinical team" if a subject is needed.',
           },
           {
             role: 'user',

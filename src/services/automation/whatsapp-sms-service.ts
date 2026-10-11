@@ -198,6 +198,37 @@ ${CLINIC_DIRECTOR} & Team`;
 }
 
 /**
+ * Generate Amount-Due Payment Reminder Message (admin-triggered only)
+ */
+export function generateAmountDueText(params: {
+  parentName: string;
+  childName: string;
+  amount?: number;
+  month?: string;
+}): string {
+  const amountLine = params.amount
+    ? `*₹${params.amount.toLocaleString('en-IN')}* is due for ${params.childName}'s therapy sessions${
+        params.month ? ` (${params.month})` : ''
+      }.`
+    : `a balance payment is due for ${params.childName}'s therapy sessions${
+        params.month ? ` (${params.month})` : ''
+      }.`;
+
+  return `🌟 *${CLINIC_NAME}* — Gentle Payment Reminder
+
+Dear ${params.parentName},
+
+A gentle reminder that ${amountLine}
+
+You can pay via UPI at the reception counter, or reply here and we will help you arrange payment. If you have already paid, kindly share the receipt so we can update our records.
+
+Questions? Call or message us at ${CLINIC_PHONE}.
+
+Warm regards,
+${CLINIC_DIRECTOR} & Team`;
+}
+
+/**
  * Generate 1-Click WhatsApp Direct URL
  * Allows front desk / Dr. Sweety to launch WhatsApp web or mobile with pre-filled message
  */
