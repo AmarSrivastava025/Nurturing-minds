@@ -54,17 +54,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const db = getDbInstance();
     const patientsSnap = await getDocs(collection(db, 'patients'));
     const byName = new Map<string, { id: string; childName: string }>();
+    const all: Array<{ key: string; id: string; childName: string }> = [];
     patientsSnap.docs.forEach((d) => {
       const data: any = d.data();
-      byName.set(normalise(String(data.childName || '')), { id: d.id, childName: data.childName });
+      const key = normalise(String(data.childName || ''));
+      const entry = { key, id: d.id, childName: data.childName };
+      byName.set(key, entry);
+      all.push(entry);
     });
+
+    const resolvePatient = (child: string) => {
+      const key = normalise(child);
+      const exact = byName.get(key);
+      if (exact) return exact;
+      const partial = all.filter((p) => p.key.startsWith(key) || key.startsWith(p.key));
+      return partial.length === 1 ? partial[0] : null;
+    };
 
     const unmatched = new Set<string>();
     const created: string[] = [];
     const batch = writeBatch(db);
 
     entries.forEach((entry, index) => {
-      const match = byName.get(normalise(entry.child));
+      const match = resolvePatient(entry.child);
       if (!match) {
         unmatched.add(entry.child);
         return;
