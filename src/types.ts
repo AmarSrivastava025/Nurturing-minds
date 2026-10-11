@@ -89,7 +89,7 @@ export interface DayOfWeekSlotTemplate {
 export interface Session {
   id: string;
   patientId: string;
-  therapistId: string;
+  therapistId?: string;
   scheduledAt: string; // ISO — editable only by admin
   status: 'scheduled' | 'completed' | 'missed';
   progressNote?: string; // 1-3 word therapist entry
