@@ -147,20 +147,20 @@ Dr. Sweety Bhatnagar & Team
         } else if (type === 'reminder_2h') {
           messageBody = `⏰ *Session Alert: Starting in 2 Hours*
 Dear ${targetName},
-*${childName}*'s 45-minute therapy session with *${therapistName}* is starting soon at *${timeSlot}*.
+*${childName}*'s 45-minute therapy session is starting soon at *${timeSlot}*.
 📍 Location: Club Opal, Olympia Opaline, Club House, OMR Road, Navalur, Chennai - 600130.
 Please bring a water bottle. If delayed, message or call us at +91 97893 05029.`;
         } else if (type === 'booking_alert') {
           messageBody = `✅ *Session Confirmed — Nurturing Minds*
 Dear ${targetName},
-Appointment confirmed for *${childName}* with *${therapistName}* at *${timeSlot}*.
+Appointment confirmed for *${childName}* at *${timeSlot}*.
 📍 Location: Club Opal, Olympia Opaline, Club House, OMR Road, Navalur, Chennai - 600130.
 We look forward to supporting ${childName}! 🌸`;
         } else {
           // Default: reminder_24h
           messageBody = `🌟 *Nurturing Minds Therapy Center*
 Dear ${targetName},
-Friendly reminder that *${childName}*'s session with *${therapistName}* is scheduled for tomorrow at *${timeSlot}* (45 mins strictly).
+Friendly reminder that *${childName}*'s session is scheduled for tomorrow at *${timeSlot}* (45 mins strictly).
 📍 Location: Club Opal, Olympia Opaline, Club House, OMR Road, Navalur, Chennai - 600130.
 Please arrive 5 minutes early.
 Dr. Sweety Bhatnagar & Team

@@ -73,7 +73,7 @@ export function generate24hReminderText(params: {
   return `🌟 *${CLINIC_NAME}*
 Dear ${params.parentName},
 
-This is a friendly reminder that *${params.childName}*'s therapy session with *${params.therapistName}* is scheduled for tomorrow:
+This is a friendly reminder that *${params.childName}*'s therapy session is scheduled for tomorrow:
 
 📅 *Date:* ${dateStr}
 ⏰ *Time:* ${timeSlot} (45 mins strictly)
@@ -101,7 +101,7 @@ export function generate2hReminderText(params: {
   return `⏰ *Session Alert: Starting in 2 Hours*
 Dear ${params.parentName},
 
-*${params.childName}*'s 45-minute therapy session with *${params.therapistName}* is coming up today at *${timeSlot}*.
+*${params.childName}*'s 45-minute therapy session is coming up today at *${timeSlot}*.
 
 📍 *Address:* ${CLINIC_LOCATION}
 💧 *Quick Tip:* Please bring a water bottle and any favorite transitional comfort toy.
@@ -156,7 +156,7 @@ export function generateBookingAlertText(params: {
   return `✅ *Session Confirmed — ${CLINIC_NAME}*
 Dear ${params.parentName},
 
-Appointment confirmed for *${params.childName}* with *${params.therapistName}*!
+Appointment confirmed for *${params.childName}*!
 
 📅 *Date:* ${dateStr}
 ⏰ *Time:* ${timeSlot} (45 mins)

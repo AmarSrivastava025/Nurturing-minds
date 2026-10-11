@@ -187,7 +187,7 @@ export function generateBookingConfirmationHtml(params: {
   const rows = [
     detailRow('Date', formatAppointmentDate(params.scheduledAt)),
     detailRow('Time', params.timeSlot || '45-Minute Therapy Slot'),
-    detailRow('Therapist', params.therapistName),
+    detailRow('Therapist', 'Assigned at the centre'),
     detailRow('Duration', `${params.durationMinutes || 45} minutes`),
     detailRow('Location', CLINIC_LOCATION, true),
   ].join('');
@@ -222,7 +222,7 @@ export function generateReminderEmailHtml(params: {
   const rows = [
     detailRow('Date', formatAppointmentDate(params.scheduledAt)),
     detailRow('Time', params.timeSlot || '45-Minute Therapy Slot'),
-    detailRow('Therapist', params.therapistName, true),
+    detailRow('Therapist', 'Assigned at the centre', true),
   ].join('');
 
   const html = renderShell({
