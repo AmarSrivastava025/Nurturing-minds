@@ -138,6 +138,23 @@ export const MemberView: React.FC<MemberViewProps> = ({
         </div>
       )}
 
+      {/* Share your experience — Google review card (front, above tabs) */}
+      <div className="bg-white p-5 rounded-2xl border border-purple-100/80 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-bold text-slate-900">Share your experience</h3>
+            <p className="text-xs text-slate-600 mt-1">Your feedback helps other families find support.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsReviewOpen(true)}
+            className="w-full sm:w-auto shrink-0 min-h-[48px] px-5 rounded-xl bg-[#6D0281] hover:bg-[#570167] text-white font-bold text-sm transition-colors duration-150 flex items-center justify-center cursor-pointer"
+          >
+            Leave a Google Review
+          </button>
+        </div>
+      </div>
+
       {/* Navigation Tabs */}
       <div className="flex items-center gap-2 border-b border-slate-200 pb-1 overflow-x-auto">
         <button
@@ -677,19 +694,6 @@ export const MemberView: React.FC<MemberViewProps> = ({
           </div>
         </div>
       )}
-
-      {/* Share your experience — Google review card */}
-      <div className="bg-white p-5 rounded-2xl border border-purple-100/80 shadow-xs">
-        <h3 className="text-sm font-bold text-slate-900">Share your experience</h3>
-        <p className="text-xs text-slate-600 mt-1">Your feedback helps other families find support.</p>
-        <button
-          type="button"
-          onClick={() => setIsReviewOpen(true)}
-          className="mt-3 w-full sm:w-auto min-h-[48px] px-5 rounded-xl bg-[#6D0281] hover:bg-[#570167] text-white font-bold text-sm transition-colors duration-150 flex items-center justify-center cursor-pointer"
-        >
-          Leave a Google Review
-        </button>
-      </div>
 
       {isReviewOpen && (
         <div
