@@ -34,6 +34,17 @@ function logStatus(status: number): void {
   console.log(`${new Date().toISOString()} ${status}`);
 }
 
+function fail(
+  req: VercelRequest,
+  res: VercelResponse,
+  debug: Record<string, unknown> = {}
+) {
+  logStatus(502);
+  const body: Record<string, unknown> = { error: 'generation_failed' };
+  if (req.headers['x-debug'] === '1') Object.assign(body, debug);
+  return res.status(502).json(body);
+}
+
 function stripQuotes(value: string): string {
   return value
     .trim()
@@ -84,8 +95,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const apiKey = process.env.REVIEW_AI_KEY;
   const placeId = process.env.GOOGLE_PLACE_ID;
   if (!apiKey || !placeId) {
-    logStatus(502);
-    return res.status(502).json({ error: 'generation_failed' });
+    return fail(req, res, { hasKey: Boolean(apiKey), hasPlace: Boolean(placeId) });
   }
 
   try {
@@ -105,8 +115,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
     if (!geminiRes.ok) {
-      logStatus(502);
-      return res.status(502).json({ error: 'generation_failed' });
+      let upstreamError = '';
+      try {
+        const errJson: any = await geminiRes.json();
+        upstreamError = errJson?.error?.message || JSON.stringify(errJson).slice(0, 300);
+      } catch {
+        upstreamError = 'unparseable_error_body';
+      }
+      return fail(req, res, { upstreamStatus: geminiRes.status, upstreamError, model: GEMINI_MODEL });
     }
 
     const data: any = await geminiRes.json();
@@ -114,15 +130,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const review = typeof raw === 'string' ? stripQuotes(raw) : '';
 
     if (!review) {
-      logStatus(502);
-      return res.status(502).json({ error: 'generation_failed' });
+      return fail(req, res, { upstreamStatus: 200, empty: true, finishReason: data?.candidates?.[0]?.finishReason });
     }
 
     const placeUrl = `https://search.google.com/local/writereview?placeid=${placeId}`;
     logStatus(200);
     return res.status(200).json({ review, placeUrl });
-  } catch {
-    logStatus(502);
-    return res.status(502).json({ error: 'generation_failed' });
+  } catch (err: any) {
+    return fail(req, res, { exception: err?.message || String(err) });
   }
 }
