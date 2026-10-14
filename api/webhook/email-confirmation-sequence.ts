@@ -847,13 +847,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   } catch (error: any) {
     console.error('[EMAIL ERROR] Unhandled automation failure:', error?.message || error);
-    const payload: Record<string, unknown> = {
-      success: false,
-      error: 'Email automation failed unexpectedly.',
-    };
-    if (req.headers['x-debug'] === '1') {
-      payload.debug = error?.message || String(error);
-    }
-    return res.status(500).json(payload);
+    return res.status(500).json({ success: false, error: 'Email automation failed unexpectedly.' });
   }
 }
