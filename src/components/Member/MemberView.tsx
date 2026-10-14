@@ -66,6 +66,8 @@ export const MemberView: React.FC<MemberViewProps> = ({
   const [isCopied, setIsCopied] = useState(false);
   const [passwordSaveSuccess, setPasswordSaveSuccess] = useState(false);
   const [isReviewOpen, setIsReviewOpen] = useState(false);
+  const [photoUrlDraft, setPhotoUrlDraft] = useState(patient.parentPhotoUrl || '');
+  const [photoSaveSuccess, setPhotoSaveSuccess] = useState(false);
 
   const assignedTherapist = therapists.find((t) => t.id === patient.assignedTherapistId);
 
@@ -564,6 +566,67 @@ export const MemberView: React.FC<MemberViewProps> = ({
                   </button>
                 </div>
               </div>
+            </div>
+
+            {/* Parent Profile Photo */}
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                Your Profile Photo
+              </span>
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-purple-100 border border-purple-200 overflow-hidden shrink-0 flex items-center justify-center text-sm font-black text-[#6D0281]">
+                  {photoUrlDraft.trim() ? (
+                    <img
+                      src={photoUrlDraft.trim()}
+                      alt="Profile preview"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    (patient.motherName || patient.fatherName || 'P').charAt(0).toUpperCase()
+                  )}
+                </div>
+                <input
+                  type="url"
+                  value={photoUrlDraft}
+                  onChange={(e) => setPhotoUrlDraft(e.target.value)}
+                  placeholder="Paste an image link (https://...)"
+                  className="flex-1 min-w-0 px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#6D0281] focus:outline-none"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    store.updatePatient(patient.id, {
+                      parentPhotoUrl: photoUrlDraft.trim() || undefined,
+                    });
+                    setPhotoSaveSuccess(true);
+                    setTimeout(() => setPhotoSaveSuccess(false), 3500);
+                  }}
+                  className="px-3 py-2 bg-[#6D0281] hover:bg-[#570167] text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  Save Photo
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPhotoUrlDraft('');
+                    store.updatePatient(patient.id, { parentPhotoUrl: undefined });
+                    setPhotoSaveSuccess(true);
+                    setTimeout(() => setPhotoSaveSuccess(false), 3500);
+                  }}
+                  className="px-3 py-2 border border-slate-300 text-slate-600 font-semibold text-xs rounded-xl hover:bg-slate-100 transition cursor-pointer"
+                >
+                  Remove
+                </button>
+                {photoSaveSuccess && (
+                  <span className="text-[11px] font-semibold text-emerald-600">Saved</span>
+                )}
+              </div>
+              <p className="text-[11px] text-slate-400">
+                Leave empty to show your name&apos;s initial instead. This photo appears in your portal header.
+              </p>
             </div>
 
             {/* Assistance Card */}

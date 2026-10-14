@@ -22,6 +22,7 @@ export interface Patient {
   parentEmail?: string;
   parentLoginId?: string; // Member / Parent Login ID
   parentPassword?: string; // Member / Parent Password
+  parentPhotoUrl?: string; // Optional parent profile photo (image URL)
   passwordLastReset?: string; // ISO timestamp
   pendingPaymentAmount?: number;
   pendingPaymentMonth?: string;

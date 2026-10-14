@@ -316,19 +316,31 @@ export function App() {
         {/* User Card at bottom with prominent Log Out button */}
         <div className="p-4 border-t border-purple-800/50 space-y-2.5">
           <div className="flex items-center space-x-3 p-2 rounded-xl bg-white/5">
-            <div className="w-8 h-8 rounded-full bg-purple-200 border border-white/20 overflow-hidden shrink-0">
-              <img
-                src={
-                  currentUser.role === 'admin'
-                    ? doctorProfile.photoUrl
-                    : currentUser.role === 'therapist'
-                    ? currentTherapist?.photoUrl
-                    : 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200'
-                }
-                alt={currentUser.name}
-                className="w-full h-full object-cover"
-              />
-            </div>
+            {currentUser.role === 'parent' && !currentPatient?.parentPhotoUrl ? (
+              <div className="w-8 h-8 rounded-full bg-purple-200 border border-white/20 shrink-0 flex items-center justify-center text-[11px] font-black text-[#6D0281]">
+                {(currentUser.name || 'P')
+                  .split(' ')
+                  .filter(Boolean)
+                  .map((w) => w[0])
+                  .slice(0, 2)
+                  .join('')
+                  .toUpperCase()}
+              </div>
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-purple-200 border border-white/20 overflow-hidden shrink-0">
+                <img
+                  src={
+                    currentUser.role === 'admin'
+                      ? doctorProfile.photoUrl
+                      : currentUser.role === 'therapist'
+                      ? currentTherapist?.photoUrl
+                      : currentPatient?.parentPhotoUrl || ''
+                  }
+                  alt={currentUser.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
             <div className="text-xs min-w-0 flex-1">
               <p className="text-white font-medium truncate">{currentUser.name}</p>
               <p className="text-purple-300 text-[10px] capitalize">
