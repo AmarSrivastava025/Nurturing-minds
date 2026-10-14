@@ -35,6 +35,7 @@ import {
 } from '../../types';
 import { downloadInvoicePDF } from '../../services/pdf';
 import { store } from '../../services/store';
+import { ReviewPanel } from '../Review/ReviewPanel';
 
 interface MemberViewProps {
   patient: Patient;
@@ -64,6 +65,7 @@ export const MemberView: React.FC<MemberViewProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [passwordSaveSuccess, setPasswordSaveSuccess] = useState(false);
+  const [isReviewOpen, setIsReviewOpen] = useState(false);
 
   const assignedTherapist = therapists.find((t) => t.id === patient.assignedTherapistId);
 
@@ -609,6 +611,30 @@ export const MemberView: React.FC<MemberViewProps> = ({
                 Published on {new Date(publishedVideo.publishedAt).toLocaleDateString('en-IN')}
               </p>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Share your experience — Google review card */}
+      <div className="bg-white p-5 rounded-2xl border border-purple-100/80 shadow-xs">
+        <h3 className="text-sm font-bold text-slate-900">Share your experience</h3>
+        <p className="text-xs text-slate-600 mt-1">Your feedback helps other families find support.</p>
+        <button
+          type="button"
+          onClick={() => setIsReviewOpen(true)}
+          className="mt-3 w-full sm:w-auto min-h-[48px] px-5 rounded-xl bg-[#6D0281] hover:bg-[#570167] text-white font-bold text-sm transition-colors duration-150 flex items-center justify-center cursor-pointer"
+        >
+          Leave a Google Review
+        </button>
+      </div>
+
+      {isReviewOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-start sm:items-center justify-center p-4 overflow-y-auto"
+          onClick={() => setIsReviewOpen(false)}
+        >
+          <div className="w-full max-w-lg my-8" onClick={(e) => e.stopPropagation()}>
+            <ReviewPanel onClose={() => setIsReviewOpen(false)} />
           </div>
         </div>
       )}

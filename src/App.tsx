@@ -53,6 +53,7 @@ import { WhatsAppAutomationManager } from './components/Admin/WhatsAppAutomation
 // Member & Therapist Components
 import { MemberView } from './components/Member/MemberView';
 import { TherapistView } from './components/Therapist/TherapistView';
+import { PublicReviewPage } from './components/Review/PublicReviewPage';
 
 export function App() {
   const [state, setState] = useState(store.getState());
@@ -86,6 +87,14 @@ export function App() {
     notifications,
     invites,
   } = state;
+
+  // Public Google-review page at /review. No login, no patient data.
+  if (
+    typeof window !== 'undefined' &&
+    window.location.pathname.replace(/\/+$/, '') === '/review'
+  ) {
+    return <PublicReviewPage />;
+  }
 
   // Unauthenticated / Logged-out view: Render professional login page
   if (!currentUser) {
